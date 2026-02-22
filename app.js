@@ -108,7 +108,6 @@ app.get('/sign-in', (req, res) => {
                     </div>
                     <div id="sign-in" class="w-full"></div>
                 </div>
-                <script async crossorigin="anonymous" data-clerk-publishable-key="${process.env.CLERK_PUBLISHABLE_KEY || 'pk_test_dHJ1ZS1icmVhbS01OS5jbGVyay5hY2NvdW50cy5kZXYk'}" src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
                 <script>
                     async function initClerk() {
                         if (typeof Clerk === 'undefined') {
@@ -133,7 +132,7 @@ app.get('/sign-in', (req, res) => {
                 </script>
                 <script crossorigin="anonymous"
                     data-clerk-publishable-key="${process.env.CLERK_PUBLISHABLE_KEY}"
-                    src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+                    src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
                     onload="initClerk()"
                     type="text/javascript"></script>
             </body>
@@ -167,7 +166,6 @@ app.get('/sign-up', (req, res) => {
                     </div>
                     <div id="sign-up" class="w-full"></div>
                 </div>
-                <script async crossorigin="anonymous" data-clerk-publishable-key="${process.env.CLERK_PUBLISHABLE_KEY || 'pk_test_dHJ1ZS1icmVhbS01OS5jbGVyay5hY2NvdW50cy5kZXYk'}" src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
                 <script>
                     async function initClerk() {
                         if (typeof Clerk === 'undefined') {
@@ -191,7 +189,7 @@ app.get('/sign-up', (req, res) => {
                 </script>
                 <script crossorigin="anonymous"
                     data-clerk-publishable-key="${process.env.CLERK_PUBLISHABLE_KEY}"
-                    src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+                    src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
                     onload="initClerk()"
                     type="text/javascript"></script>
             </body>

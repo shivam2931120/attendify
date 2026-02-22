@@ -169,19 +169,31 @@ app.get('/sign-up', (req, res) => {
                 </div>
                 <script async crossorigin="anonymous" data-clerk-publishable-key="${process.env.CLERK_PUBLISHABLE_KEY || 'pk_test_dHJ1ZS1icmVhbS01OS5jbGVyay5hY2NvdW50cy5kZXYk'}" src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
                 <script>
-                    window.addEventListener('load', async function() {
+                    async function initClerk() {
+                        if (typeof Clerk === 'undefined') {
+                            setTimeout(initClerk, 100);
+                            return;
+                        }
                         await Clerk.load();
+                        if (Clerk.user) {
+                            window.location.href = '/';
+                            return;
+                        }
                         Clerk.mountSignUp(document.getElementById('sign-up'), {
                            appearance: ${clerkOptionsStr},
                            signInUrl: '/sign-in'
                         });
-                        
                         setInterval(() => {
                             document.querySelectorAll('.cl-internal-b3al6g').forEach(el => { el.style.display = 'none'; el.style.opacity = '0'; });
                             document.querySelectorAll('a[href*="clerk.com"]').forEach(el => { el.style.display = 'none'; el.style.opacity = '0'; });
                         }, 500);
-                    });
+                    }
                 </script>
+                <script crossorigin="anonymous"
+                    data-clerk-publishable-key="${process.env.CLERK_PUBLISHABLE_KEY}"
+                    src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+                    onload="initClerk()"
+                    type="text/javascript"></script>
             </body>
         </html>
     `);

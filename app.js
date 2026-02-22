@@ -23,27 +23,26 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API Routes (Protected internally by requireAuth inside api.js)
 app.use('/api', apiRoutes);
 
-// Protected UI Routes - using Clerk requireAuth to ensure only logged in users see the app
-// Unauthenticated users will get a 401 or should be handled by frontend to redirect to Clerk sign-in
-app.get('/', requireAuth({ signInUrl: '/sign-in' }), (req, res) => {
+// UI Routes — auth enforced client-side by Clerk.js on each page
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-app.get('/subjects', requireAuth({ signInUrl: '/sign-in' }), (req, res) => {
+app.get('/subjects', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'subjects.html'));
 });
-app.get('/calendar', requireAuth({ signInUrl: '/sign-in' }), (req, res) => {
+app.get('/calendar', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'calendar.html'));
 });
-app.get('/calculator', requireAuth({ signInUrl: '/sign-in' }), (req, res) => {
+app.get('/calculator', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'calculator.html'));
 });
-app.get('/profile', requireAuth({ signInUrl: '/sign-in' }), (req, res) => {
+app.get('/profile', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'profile.html'));
 });
-app.get('/analytics', requireAuth({ signInUrl: '/sign-in' }), (req, res) => {
+app.get('/analytics', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'analytics.html'));
 });
-app.get('/subject-details', requireAuth({ signInUrl: '/sign-in' }), (req, res) => {
+app.get('/subject-details', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'subject-details.html'));
 });
 

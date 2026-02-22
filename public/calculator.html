@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Attendify - Scenario Calculator</title>
+    <link rel="icon" href="/logo.png" type="image/png">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#050505">
+
+    <!-- Clerk Auth -->
+    <script async crossorigin="anonymous"
+        data-clerk-publishable-key="pk_test_YnJpZ2h0LW1vcmF5LTIuY2xlcmsuYWNjb3VudHMuZGV2JA"
+        src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="/css/style.css">
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ff3b3b",
+                        "accent-red": "#ff4d4d",
+                        "dark-red": "#7a0000",
+                        "deep-bg": "#050505",
+                        "card-bg": "#0d0d0d",
+                        "border-color": "#1f1f1f",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+
+<body class="dark bg-deep-bg text-white font-display min-h-screen flex flex-col" x-data="calculatorData()"
+    x-init="initData()">
+
+    <!-- Header Navigation -->
+    <header
+        class="hidden md:flex items-center justify-between border-b border-border-color bg-deep-bg px-4 sm:px-10 py-4 sticky top-0 z-50">
+        <div class="flex items-center gap-4 sm:gap-10">
+            <div class="flex items-center gap-3 text-primary">
+                <span class="material-symbols-outlined text-3xl font-black">analytics</span>
+                <h2
+                    class="text-white text-lg sm:text-xl font-black uppercase tracking-[0.2em] leading-tight hidden sm:block">
+                    Attendify</h2>
+            </div>
+        </div>
+
+        <div class="flex flex-1 justify-end gap-4 sm:gap-6 sm:gap-10 items-center">
+                        <nav class="hidden md:flex items-center gap-8">
+                <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest" href="/">Dashboard</a>
+                <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest" href="/subjects">Subjects</a>
+                <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest" href="/calendar">Calendar</a>
+                <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest" href="/analytics">Analytics</a>
+                <a class="text-primary border-b border-primary py-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest" href="/calculator">Calculator</a>
+                <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest" href="/profile">Profile</a>
+            </nav>
+            <div class="hidden">
+                <div id="user-button"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Bottom Nav -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-deep-bg border-t border-border-color z-50 flex justify-around items-center pt-2 pb-4 px-2 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]">
+        <a href="/" class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
+            <span class="material-symbols-outlined text-[24px]">home</span>
+            <span class="text-[9px] font-black uppercase tracking-widest">Home</span>
+        </a>
+        <a href="/subjects" class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
+            <span class="material-symbols-outlined text-[24px]">library_books</span>
+            <span class="text-[9px] font-black uppercase tracking-widest">Subjects</span>
+        </a>
+        <a href="/calendar" class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
+            <span class="material-symbols-outlined text-[24px]">calendar_month</span>
+            <span class="text-[9px] font-black uppercase tracking-widest">Calendar</span>
+        </a>
+        <a href="/analytics" class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
+            <span class="material-symbols-outlined text-[24px]">insights</span>
+            <span class="text-[9px] font-black uppercase tracking-widest">Analytics</span>
+        </a>
+        <a href="/profile" class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
+            <span class="material-symbols-outlined text-[24px]">person</span>
+            <span class="text-[9px] font-black uppercase tracking-widest">Profile</span>
+        </a>
+    </nav>
+
+    <main class="flex-1 mx-auto w-full max-w-4xl px-4 sm:px-10 pt-4 sm:pt-10 pb-24 md:pb-10" id="main-content" x-show="!loading"
+        style="opacity: 0; transition: opacity 0.5s ease;">
+
+        <div class="flex flex-col gap-2 mb-6 sm:mb-10">
+            <h1 class="text-white text-3xl sm:text-5xl font-black leading-none tracking-tighter uppercase">Scenario
+                Simulator</h1>
+            <p class="text-neutral-500 text-sm font-medium">Predict your attendance percentage securely before missing a
+                class.</p>
+        </div>
+
+        <div class="rounded bg-card-bg border border-border-color p-8 neo-shadow relative overflow-hidden">
+
+            <!-- Setup Form -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+
+                <div class="space-y-6 border-r border-border-color md:pr-8">
+                    <h3
+                        class="text-sm font-black text-white uppercase tracking-[0.2em] border-l-2 border-primary pl-3 mb-6">
+                        Simulation Input</h3>
+
+                    <div>
+                        <label
+                            class="block text-[10px] font-black text-neutral-500 mb-2 uppercase tracking-widest">Target
+                            Subject</label>
+                        <select x-model="selectedSubjectId" @change="loadSubjectData()"
+                            class="w-full rounded bg-deep-bg text-white border border-border-color focus:ring-1 focus:ring-primary focus:border-primary px-4 py-3 text-xs uppercase">
+                            <option value="">-- SELECT SUBJECT --</option>
+                            <template x-for="subject in subjects" :key="subject.id">
+                                <option :value="subject.id" x-text="subject.subject_name"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <template x-if="selectedSubject">
+                        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-border-color">
+                            <div class="bg-deep-bg p-4 rounded border border-border-color">
+                                <p class="text-[9px] font-black uppercase text-neutral-500 mb-1 tracking-widest">
+                                    Attended</p>
+                                <p class="text-2xl font-black text-white" x-text="selectedSubject?.attended_classes">
+                                </p>
+                            </div>
+                            <div class="bg-deep-bg p-4 rounded border border-border-color">
+                                <p class="text-[9px] font-black uppercase text-neutral-500 mb-1 tracking-widest">Total
+                                </p>
+                                <p class="text-2xl font-black text-white" x-text="selectedSubject?.total_classes"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Scenarios -->
+                <div class="space-y-6">
+                    <h3 class="text-sm font-black text-neutral-500 uppercase tracking-[0.2em] mb-6">"What-If" Analysis
+                    </h3>
+
+                    <div class="space-y-4" :class="{ 'opacity-50 pointer-events-none': !selectedSubject }">
+                        <div>
+                            <label
+                                class="text-[10px] font-black text-neutral-400 mb-2 uppercase tracking-widest flex items-center justify-between">
+                                <span>If I <span class="text-primary border-b border-primary">MISS</span> next
+                                    classes</span>
+                                <span class="text-primary" x-text="classesToMiss"></span>
+                            </label>
+                            <input type="range" x-model.number="classesToMiss" min="0" max="20"
+                                class="w-full accent-primary h-1 rounded-full bg-neutral-800 outline-none appearance-none"
+                                @input="calculate()">
+                        </div>
+
+                        <div class="pt-4">
+                            <label
+                                class="text-[10px] font-black text-neutral-400 mb-2 uppercase tracking-widest flex items-center justify-between">
+                                <span>If I <span class="text-green-500 border-b border-green-500">ATTEND</span> next
+                                    classes</span>
+                                <span class="text-green-500" x-text="classesToAttend"></span>
+                            </label>
+                            <input type="range" x-model.number="classesToAttend" min="0" max="20"
+                                class="w-full accent-green-500 h-1 rounded-full bg-neutral-800 outline-none appearance-none"
+                                @input="calculate()">
+                        </div>
+
+                        <button @click="resetScenarios"
+                            class="text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-white transition-colors mt-6 border border-border-color px-4 py-2 rounded">
+                            Reset Timeline
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Projection -->
+            <div class="mt-8 pt-8 border-t border-border-color relative z-10" x-show="selectedSubject" x-transition>
+                <div
+                    class="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-6 bg-deep-bg border border-border-color rounded-lg p-8">
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-neutral-500 tracking-widest mb-2">Projected
+                            Future Attendance</p>
+                        <div class="flex items-baseline gap-4 mb-2">
+                            <span class="text-6xl font-black transition-colors" :class="projectedClassColor()"
+                                x-text="projectedPercentage + '%'"></span>
+                        </div>
+                        <p class="text-xs font-bold uppercase tracking-widest" :class="projectedClassColor()">
+                            <template
+                                x-if="projectedPercentage >= selectedSubject?.min_requirement_percentage"><span>TARGET
+                                    REQUIREMENT MET</span></template>
+                            <template
+                                x-if="projectedPercentage < selectedSubject?.min_requirement_percentage"><span>TARGET
+                                    REQUIREMENT FAILED</span></template>
+                        </p>
+                    </div>
+                    <div
+                        class="flex-shrink-0 text-center bg-card-bg border border-border-color p-4 rounded min-w-[140px]">
+                        <p
+                            class="text-[9px] font-black uppercase text-neutral-500 tracking-widest border-b border-border-color pb-2 mb-2">
+                            New Totals</p>
+                        <p class="text-sm font-bold text-white uppercase tracking-widest mb-1"><span
+                                x-text="projectedAttended" class="text-green-500"></span> ATTENDED</p>
+                        <p class="text-sm font-bold text-white uppercase tracking-widest"><span x-text="projectedTotal"
+                                class="text-neutral-400"></span> TOTAL</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="absolute bottom-0 right-0 p-10 opacity-5 pointer-events-none z-0">
+                <span class="material-symbols-outlined text-9xl">calculate</span>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/main.js"></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('calculatorData', () => ({
+                loading: true,
+
+                subjects: [],
+                selectedSubjectId: "",
+                selectedSubject: null,
+
+                classesToMiss: 0,
+                classesToAttend: 0,
+
+                projectedPercentage: 0,
+                projectedAttended: 0,
+                projectedTotal: 0,
+
+                async initData() {
+                    window.addEventListener('load', async () => {
+                        await Clerk.load();
+                        const userButtonDiv = document.getElementById('user-button');
+                        if (Clerk.user) {
+                            Clerk.mountUserButton(userButtonDiv);
+                            document.getElementById('main-content').style.opacity = '1';
+                            try {
+                                const response = await fetch('/api/subjects');
+                                this.subjects = await response.json();
+                            } catch (err) {
+                                console.error(err);
+                                window.showToast('Failed to load subjects', 'error');
+                            } finally {
+                                this.loading = false;
+                            }
+                        } else {
+                            window.location.href = '/sign-in';
+                        }
+                    });
+                },
+
+                loadSubjectData() {
+                    if (!this.selectedSubjectId) {
+                        this.selectedSubject = null;
+                        return;
+                    }
+                    this.selectedSubject = this.subjects.find(s => s.id == this.selectedSubjectId);
+                    this.resetScenarios();
+                },
+
+                calculate() {
+                    if (!this.selectedSubject) return;
+
+                    this.projectedAttended = this.selectedSubject.attended_classes + parseInt(this.classesToAttend);
+                    this.projectedTotal = this.selectedSubject.total_classes + parseInt(this.classesToMiss) + parseInt(this.classesToAttend);
+
+                    if (this.projectedTotal === 0) {
+                        this.projectedPercentage = 0;
+                    } else {
+                        this.projectedPercentage = Number(((this.projectedAttended / this.projectedTotal) * 100).toFixed(2));
+                    }
+                },
+
+                resetScenarios() {
+                    this.classesToMiss = 0;
+                    this.classesToAttend = 0;
+                    this.calculate();
+                },
+
+                projectedClassColor() {
+                    if (!this.selectedSubject) return 'text-white';
+                    if (this.projectedPercentage >= this.selectedSubject.min_requirement_percentage) return 'text-green-500';
+                    if (this.projectedPercentage >= this.selectedSubject.min_requirement_percentage - 2) return 'text-orange-500';
+                    return 'text-primary';
+                }
+            }));
+        });
+    </script>
+    <!-- Toast container - fixed popup below any header -->
+    <div id="toast-container" class="fixed top-20 right-4 z-[9999] flex flex-col gap-2 pointer-events-none w-72 max-w-[calc(100vw-2rem)]"></div>
+    <script src="/js/geo.js"></script>
+</body>
+
+</html>

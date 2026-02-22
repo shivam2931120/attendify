@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body { 
+        @apply bg-[#050505] text-white font-display; 
+    }
+}
+
+.chart-bar-high {
+    background: linear-gradient(to top, #7a0000, #ff3b3b);
+}
+.chart-bar-mid {
+    background: linear-gradient(to top, #4a0000, #990000);
+}
+.chart-bar-low {
+    background: linear-gradient(to top, #2a0000, #660000);
+}
+.neo-shadow {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+}
+.indicator-pulse {
+    box-shadow: 0 0 8px #ff3b3b;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 8px #ff3b3b; }
+  50% { box-shadow: 0 0 16px border-[#ff3b3b]; }
+  100% { box-shadow: 0 0 8px #ff3b3b; }
+}
+
+.modal-open {
+    overflow: hidden;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* Custom Scrollbar for better dark mode feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0d0d0d; 
+}
+::-webkit-scrollbar-thumb {
+  background: #333; 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ff3b3b; 
+}

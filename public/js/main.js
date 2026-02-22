@@ -1,0 +1,69 @@
+// Common Javascript utility file for Attendify
+
+// Global Toast Notification System
+window.showToast = function (message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return; // If page doesn't have the container yet
+
+    const toast = document.createElement('div');
+
+    // Base styles
+    toast.className = `px-4 py-3 rounded border text-xs font-black uppercase tracking-widest shadow-lg transform transition-all duration-300 ease-out -translate-y-full opacity-0 flex items-center gap-2 pointer-events-auto`;
+
+    if (type === 'success') {
+        toast.classList.add('bg-green-500/10', 'border-green-500/30', 'text-green-500');
+        toast.innerHTML = `<span class="material-symbols-outlined text-[16px]">check_circle</span> ${message}`;
+    } else if (type === 'error') {
+        toast.classList.add('bg-primary/10', 'border-primary/30', 'text-primary');
+        toast.innerHTML = `<span class="material-symbols-outlined text-[16px]">error</span> ${message}`;
+    } else {
+        toast.classList.add('bg-white/10', 'border-white/30', 'text-white');
+        toast.innerHTML = `<span class="material-symbols-outlined text-[16px]">info</span> ${message}`;
+    }
+
+    container.appendChild(toast);
+
+    // Animate in
+    requestAnimationFrame(() => {
+        toast.classList.remove('-translate-y-full', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+    });
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+document.addEventListener('alpine:init', () => {
+    // Make showToast accessible inside Alpine components easily if needed
+    Alpine.store('utils', {
+        toast(msg, type) { window.showToast(msg, type); }
+    });
+});
+
+window.calculateWhatIf = function (subject) {
+    const total = subject.total_classes;
+    const attended = subject.attended_classes;
+    const req = subject.min_requirement_percentage;
+
+    if (total === 0) return { text: 'No classes', color: 'text-neutral-500 bg-white/5 border-border-color' };
+
+    let currentPct = (attended / total) * 100;
+
+    if (currentPct >= req) {
+        if (req === 0) return { text: 'Safe', color: 'text-green-500 bg-green-500/10 border-green-500/20' };
+        let canMiss = Math.floor((attended * 100 / req) - total);
+        if (canMiss > 0) {
+            return { text: `Safe to miss ${canMiss}`, color: 'text-green-500 bg-green-500/10 border-green-500/20' };
+        } else {
+            return { text: `On track`, color: 'text-orange-500 bg-orange-500/10 border-orange-500/20' };
+        }
+    } else {
+        if (req === 100) return { text: 'Cannot reach 100%', color: 'text-primary bg-primary/10 border-primary/20' };
+        let needToAttend = Math.ceil((req * total - 100 * attended) / (100 - req));
+        return { text: `Need ${needToAttend} more`, color: 'text-primary bg-primary/10 border-primary/20' };
+    }
+};

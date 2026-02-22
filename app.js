@@ -2,7 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { clerkMiddleware, requireAuth } = require('@clerk/express');
+const { clerkMiddleware } = require('@clerk/express');
+
 
 const apiRoutes = require('./routes/api');
 
@@ -14,14 +15,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Clerk Auth Middleware
-app.use(clerkMiddleware());
+// API Routes — Clerk middleware applied only here so API reads req.auth.userId
+app.use('/api', clerkMiddleware(), apiRoutes);
 
-// Serve static files from the 'public' directory
+// Serve static assets (JS, CSS, images, manifest, service-worker)
 app.use(express.static(path.join(__dirname, 'public')));
-
-// API Routes (Protected internally by requireAuth inside api.js)
-app.use('/api', apiRoutes);
 
 // UI Routes — auth enforced client-side by Clerk.js on each page
 app.get('/', (req, res) => {

@@ -124,7 +124,9 @@ app.get('/sign-in', (req, res) => {
                         }
                         Clerk.mountSignIn(document.getElementById('sign-in'), {
                            appearance: ${clerkOptionsStr},
-                           signUpUrl: '/sign-up'
+                           signUpUrl: '/sign-up',
+                           forceRedirectUrl: '/',
+                           fallbackRedirectUrl: '/'
                         });
                         setInterval(() => {
                             document.querySelectorAll('.cl-internal-b3al6g').forEach(el => { el.style.display = 'none'; el.style.opacity = '0'; });
@@ -183,7 +185,9 @@ app.get('/sign-up', (req, res) => {
                         }
                         Clerk.mountSignUp(document.getElementById('sign-up'), {
                            appearance: ${clerkOptionsStr},
-                           signInUrl: '/sign-in'
+                           signInUrl: '/sign-in',
+                           forceRedirectUrl: '/',
+                           fallbackRedirectUrl: '/'
                         });
                         setInterval(() => {
                             document.querySelectorAll('.cl-internal-b3al6g').forEach(el => { el.style.display = 'none'; el.style.opacity = '0'; });

@@ -303,6 +303,7 @@
                     window.addEventListener('load', async () => {
                         await Clerk.load();
                         const userButtonDiv = document.getElementById('user-button');
+                        if (typeof Clerk === "undefined") { setTimeout(() => this.initData(), 100); return; }
                         if (Clerk.user) {
                             Clerk.mountUserButton(userButtonDiv);
                             document.getElementById('main-content').style.opacity = '1';

@@ -266,6 +266,12 @@
                             <span class="material-symbols-outlined text-lg mb-1">add_circle</span>
                             <span class="text-[9px] font-black uppercase tracking-widest">Extra</span>
                         </button>
+                        <button x-show="isSubjectScheduledToday(subject.id)"
+                            @click="massBunkSubject(subject.id, subject.subject_name)"
+                            class="col-span-3 flex items-center justify-center gap-2 py-2 mt-1 bg-white/5 hover:bg-orange-500/20 hover:text-orange-500 border border-transparent hover:border-orange-500/50 rounded transition-all text-neutral-400">
+                            <span class="material-symbols-outlined text-lg">event_busy</span>
+                            <span class="text-[9px] font-black uppercase tracking-widest">Bunk Today's Class</span>
+                        </button>
                     </div>
 
                     <div class="mt-4 pt-3 border-t border-border-color flex items-center justify-between">
@@ -323,6 +329,48 @@
                         this.timetable = await res.json();
                     } catch (e) {
                         console.error('Timetable fetch failed', e);
+                    }
+                },
+
+                isSubjectScheduledToday(subjectId) {
+                    if (!this.timetable || this.timetable.length === 0) return false;
+                    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                    const todayName = days[new Date().getDay()];
+                    return this.timetable.some(s => s.day.toLowerCase() === todayName && s.subjectId === subjectId.toString());
+                },
+
+                async massBunkSubject(subjectId, subjectName) {
+                    if (!confirm(`Are you sure you want to bunk ALL of today's slots for ${subjectName}?`)) return;
+
+                    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                    const todayName = days[new Date().getDay()];
+
+                    // Find how many slots this subject has today
+                    const slotsToday = this.timetable.filter(s => s.day.toLowerCase() === todayName && s.subjectId === subjectId.toString());
+
+                    if (slotsToday.length === 0) {
+                        showToast('No slots scheduled today for this subject.', 'info');
+                        return;
+                    }
+
+                    const today = new Date().toISOString().split('T')[0];
+                    showToast(`Bunking ${slotsToday.length} slot(s)...`, 'info');
+
+                    try {
+                        // Mark as absent X times (where X is the number of slots today)
+                        await Promise.all(slotsToday.map(() =>
+                            fetch('/api/attendance/mark', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ subjectId, status: 'absent', date: today })
+                            })
+                        ));
+
+                        showToast('Slots bunked successfully!', 'success');
+                        await this.fetchDashboard();
+                    } catch (e) {
+                        console.error('Bunk failed', e);
+                        showToast('Error saving bunk', 'error');
                     }
                 },
 

@@ -250,28 +250,54 @@
                     </div>
 
                     <!-- Quick Marks Actions -->
-                    <div class="grid grid-cols-3 gap-2 mt-auto">
-                        <button @click="markAttendance(subject.id, 'present')"
-                            class="flex flex-col items-center justify-center py-2 bg-white/5 hover:bg-green-500/20 hover:text-green-500 border border-transparent hover:border-green-500/50 rounded transition-all text-neutral-400">
-                            <span class="material-symbols-outlined text-lg mb-1">check_circle</span>
-                            <span class="text-[9px] font-black uppercase tracking-widest">Present</span>
-                        </button>
-                        <button @click="markAttendance(subject.id, 'absent')"
-                            class="flex flex-col items-center justify-center py-2 bg-white/5 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/50 rounded transition-all text-neutral-400">
-                            <span class="material-symbols-outlined text-lg mb-1">cancel</span>
-                            <span class="text-[9px] font-black uppercase tracking-widest">Absent</span>
-                        </button>
-                        <button @click="markAttendance(subject.id, 'extra')"
-                            class="flex flex-col items-center justify-center py-2 bg-white/5 hover:bg-blue-500/20 hover:text-blue-500 border border-transparent hover:border-blue-500/50 rounded transition-all text-neutral-400">
-                            <span class="material-symbols-outlined text-lg mb-1">add_circle</span>
-                            <span class="text-[9px] font-black uppercase tracking-widest">Extra</span>
-                        </button>
-                        <button x-show="isSubjectScheduledToday(subject.id)"
-                            @click="massBunkSubject(subject.id, subject.subject_name)"
-                            class="col-span-3 flex items-center justify-center gap-2 py-2 mt-1 bg-white/5 hover:bg-orange-500/20 hover:text-orange-500 border border-transparent hover:border-orange-500/50 rounded transition-all text-neutral-400">
-                            <span class="material-symbols-outlined text-lg">event_busy</span>
-                            <span class="text-[9px] font-black uppercase tracking-widest">Bunk Today's Class</span>
-                        </button>
+                    <div class="mt-auto h-[120px] flex flex-col justify-end">
+                        <!-- Default Action Buttons (Shows if NOT marked today) -->
+                        <div x-show="!isSubjectMarkedToday(subject.id)" class="grid grid-cols-3 gap-2">
+                            <button @click="markAttendance(subject.id, 'present')"
+                                class="flex flex-col items-center justify-center py-2 bg-white/5 hover:bg-green-500/20 hover:text-green-500 border border-transparent hover:border-green-500/50 rounded transition-all text-neutral-400">
+                                <span class="material-symbols-outlined text-lg mb-1">check_circle</span>
+                                <span class="text-[9px] font-black uppercase tracking-widest">Present</span>
+                            </button>
+                            <button @click="markAttendance(subject.id, 'absent')"
+                                class="flex flex-col items-center justify-center py-2 bg-white/5 hover:bg-primary/20 hover:text-primary border border-transparent hover:border-primary/50 rounded transition-all text-neutral-400">
+                                <span class="material-symbols-outlined text-lg mb-1">cancel</span>
+                                <span class="text-[9px] font-black uppercase tracking-widest">Absent</span>
+                            </button>
+                            <button @click="markAttendance(subject.id, 'extra')"
+                                class="flex flex-col items-center justify-center py-2 bg-white/5 hover:bg-blue-500/20 hover:text-blue-500 border border-transparent hover:border-blue-500/50 rounded transition-all text-neutral-400">
+                                <span class="material-symbols-outlined text-lg mb-1">add_circle</span>
+                                <span class="text-[9px] font-black uppercase tracking-widest">Extra</span>
+                            </button>
+                            <button x-show="isSubjectScheduledToday(subject.id)"
+                                @click="massBunkSubject(subject.id, subject.subject_name)"
+                                class="col-span-3 flex items-center justify-center gap-2 py-2 mt-1 bg-white/5 hover:bg-orange-500/20 hover:text-orange-500 border border-transparent hover:border-orange-500/50 rounded transition-all text-neutral-400">
+                                <span class="material-symbols-outlined text-lg">event_busy</span>
+                                <span class="text-[9px] font-black uppercase tracking-widest">Bunk Today's Class</span>
+                            </button>
+                        </div>
+
+                        <!-- Marked Today State (Shows if marked today) -->
+                        <div x-show="isSubjectMarkedToday(subject.id)" style="display: none;"
+                            class="flex flex-col gap-2 p-3 bg-neutral-900/50 border border-border-color rounded relative group">
+                            <div class="flex items-center gap-2 text-white">
+                                <span class="material-symbols-outlined text-green-500 text-sm">verified</span>
+                                <span class="text-[10px] font-black uppercase tracking-widest">Action Recorded</span>
+                            </div>
+                            <span class="text-xs text-neutral-400 font-medium">You have already marked attendance for
+                                this subject today.</span>
+                            <button @click="revokeTodayRecords(subject.id)"
+                                class="absolute top-3 right-3 text-neutral-500 hover:text-primary transition-colors flex items-center gap-1 group/revoke"
+                                title="Revoke Today's Action">
+                                <span
+                                    class="text-[9px] font-black uppercase tracking-widest opacity-0 group-hover/revoke:opacity-100 transition-opacity">Revoke</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                    <path d="M3 3v5h5"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="mt-4 pt-3 border-t border-border-color flex items-center justify-between">
@@ -416,11 +442,57 @@
                     try {
                         const response = await fetch('/api/dashboard');
                         const data = await response.json();
-                        this.stats = data;
+
+                        // We need the raw history from /api/subjects to verify dates
+                        const subjectsRes = await fetch('/api/subjects');
+                        const rawSubjects = await subjectsRes.json();
+
+                        this.stats = {
+                            ...data,
+                            subjects: data.subjects.map(analyzedSub => {
+                                const rawSub = rawSubjects.find(s => s.id === analyzedSub.id);
+                                return {
+                                    ...analyzedSub,
+                                    history: rawSub ? rawSub.history : []
+                                };
+                            })
+                        };
                     } catch (err) {
                         console.error(err);
                     } finally {
                         this.loading = false;
+                    }
+                },
+
+                isSubjectMarkedToday(subjectId) {
+                    if (!this.stats || !this.stats.subjects) return false;
+                    const subject = this.stats.subjects.find(s => s.id === subjectId.toString());
+                    if (!subject || !subject.history) return false;
+
+                    const todayPrefix = new Date().toISOString().split('T')[0];
+                    return subject.history.some(record => record.date.startsWith(todayPrefix));
+                },
+
+                async revokeTodayRecords(subjectId) {
+                    const subject = this.stats.subjects.find(s => s.id === subjectId.toString());
+                    if (!subject || !subject.history) return;
+
+                    const todayPrefix = new Date().toISOString().split('T')[0];
+                    const todayRecords = subject.history.filter(record => record.date.startsWith(todayPrefix));
+
+                    if (todayRecords.length === 0) return;
+
+                    if (!confirm("Are you sure you want to revoke today's actions for this subject ?")) return;
+
+                    try {
+                        await Promise.all(todayRecords.map(record =>
+                            fetch(`/api/attendance/${subjectId}/${record.id}`, { method: 'DELETE' })
+                        ));
+                        showToast('Actions revoked successfully', 'success');
+                        await this.fetchDashboard();
+                    } catch (e) {
+                        console.error('Error revoking records', e);
+                        showToast('Error revoking actions', 'error');
                     }
                 },
 

@@ -80,8 +80,8 @@ class DataService {
             subject_name: subjectData.subject_name,
             faculty_name: subjectData.faculty_name,
             min_requirement_percentage: parseFloat(subjectData.min_requirement_percentage),
-            total_classes: parseInt(subjectData.total_classes) || 0,
-            attended_classes: parseInt(subjectData.attended_classes) || 0,
+            total_classes: 0,
+            attended_classes: 0,
             history: []
         };
         data.subjects.push(newSubject);

@@ -86,6 +86,8 @@ app.get('/sign-in', (req, res) => {
     res.send(`
         <html>
             <head>
+                <meta charset="utf-8" />
+                <meta content="width=device-width, initial-scale=1.0" name="viewport" />
                 <title>Sign In - Attendify</title>
                 <script src="https://cdn.tailwindcss.com"></script>
                 <link rel="icon" href="/logo.png" type="image/png">
@@ -97,8 +99,8 @@ app.get('/sign-in', (req, res) => {
                 </style>
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
             </head>
-            <body class="bg-[#050505] text-white flex flex-col items-center justify-center min-h-screen p-4 sm:p-10">
-                <div class="w-full max-w-sm mx-auto flex flex-col items-center">
+            <body class="bg-[#050505] text-white flex flex-col items-center justify-center min-h-screen p-6 sm:p-10">
+                <div class="w-full max-w-[400px] mx-auto flex flex-col items-center">
                     <div class="mb-8 flex flex-col items-center text-center">
                         <div class="w-16 h-16 rounded-2xl bg-[#141414] border border-[#2a2a2a] mb-5 flex items-center justify-center overflow-hidden shadow-[0_0_20px_rgba(255,59,59,0.15)]">
                             <img src="/logo.png" alt="Attendify Logo" class="w-12 h-12 object-contain" />
@@ -144,6 +146,8 @@ app.get('/sign-up', (req, res) => {
     res.send(`
         <html>
             <head>
+                <meta charset="utf-8" />
+                <meta content="width=device-width, initial-scale=1.0" name="viewport" />
                 <title>Sign Up - Attendify</title>
                 <script src="https://cdn.tailwindcss.com"></script>
                 <link rel="icon" href="/logo.png" type="image/png">
@@ -155,8 +159,8 @@ app.get('/sign-up', (req, res) => {
                 </style>
                 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
             </head>
-            <body class="bg-[#050505] text-white flex flex-col items-center justify-center min-h-screen p-4 sm:p-10">
-                <div class="w-full max-w-sm mx-auto flex flex-col items-center">
+            <body class="bg-[#050505] text-white flex flex-col items-center justify-center min-h-screen p-6 sm:p-10">
+                <div class="w-full max-w-[400px] mx-auto flex flex-col items-center">
                     <div class="mb-8 flex flex-col items-center text-center">
                         <div class="w-16 h-16 rounded-2xl bg-[#141414] border border-[#2a2a2a] mb-5 flex items-center justify-center overflow-hidden shadow-[0_0_20px_rgba(255,59,59,0.15)]">
                             <img src="/logo.png" alt="Attendify Logo" class="w-12 h-12 object-contain" />

@@ -14,7 +14,8 @@
     <!-- Clerk Auth -->
     <script async crossorigin="anonymous"
         data-clerk-publishable-key="pk_test_YnJpZ2h0LW1vcmF5LTIuY2xlcmsuYWNjb3VudHMuZGV2JA"
-        src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js" type="text/javascript"></script>
+        src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+        type="text/javascript"></script>
 
     <!-- Alpine.js for lightweight reactivity -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -119,11 +120,25 @@
     <main class="flex-1 w-full max-w-[1280px] mx-auto px-4 sm:px-10 pt-4 sm:pt-10 pb-24 md:pb-10 relative"
         id="main-content" style="opacity: 0; transition: opacity 0.5s ease;">
         <!-- Hero Section -->
-        <div class="flex flex-col gap-2 mb-6 sm:mb-10">
-            <h1 class="text-white text-3xl sm:text-5xl font-black leading-none tracking-tighter uppercase"
-                x-text="stats.profile && stats.profile.name ? 'HELLO, ' + stats.profile.name.split(' ')[0] : 'OVERVIEW'">
-                OVERVIEW</h1>
-            <p class="text-neutral-500 text-sm font-medium">Real-time attendance tracking and predictions.</p>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-white text-3xl sm:text-5xl font-black leading-none tracking-tighter uppercase"
+                    x-text="stats.profile && stats.profile.name ? 'HELLO, ' + stats.profile.name.split(' ')[0] : 'OVERVIEW'">
+                    OVERVIEW</h1>
+                <p class="text-neutral-500 text-sm font-medium">Real-time attendance tracking and predictions.</p>
+            </div>
+            <!-- Mass Bunk Action -->
+            <button @click="massBunk()"
+                class="group relative overflow-hidden bg-white/5 border border-border-color hover:border-primary/50 text-white px-6 py-3 rounded flex items-center gap-3 transition-all">
+                <div class="flex flex-col items-start">
+                    <span
+                        class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 group-hover:text-primary transition-colors">Emergency
+                        Mark</span>
+                    <span class="text-xs font-black uppercase tracking-widest">Mass Bunk Today</span>
+                </div>
+                <span
+                    class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">event_busy</span>
+            </button>
         </div>
 
         <!-- Global Stats Row -->
@@ -282,6 +297,7 @@
                 loading: true,
                 mobileMenuOpen: false,
                 stats: { profile: null, overall_percentage: 0, overall_status: 'loading', subjects: [], total_classes: 0, total_attended: 0 },
+                timetable: [],
 
                 async initData() {
                     window.addEventListener('load', async () => {
@@ -291,12 +307,59 @@
                             Clerk.mountUserButton(userButtonDiv);
                             document.getElementById('main-content').style.opacity = '1';
                             await this.fetchDashboard();
+                            await this.fetchTimetable();
                             // Expose refresh hook for geo.js auto-attendance
                             window.__attendifyRefresh = () => this.fetchDashboard();
                         } else {
                             window.location.href = '/sign-in';
                         }
                     });
+                },
+
+                async fetchTimetable() {
+                    try {
+                        const res = await fetch('/api/timetable');
+                        this.timetable = await res.json();
+                    } catch (e) {
+                        console.error('Timetable fetch failed', e);
+                    }
+                },
+
+                async massBunk() {
+                    if (!confirm('Are you sure you want to mark all subjects scheduled for today as ABSENT?')) return;
+
+                    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                    const todayName = days[new Date().getDay()];
+
+                    const todaySlots = this.timetable.filter(s => s.day.toLowerCase() === todayName);
+
+                    if (todaySlots.length === 0) {
+                        showToast('No classes scheduled for today', 'info');
+                        return;
+                    }
+
+                    // Get unique subject IDs from today's slots
+                    const subjectIds = [...new Set(todaySlots.map(s => s.subjectId))];
+                    const today = new Date().toISOString().split('T')[0];
+
+                    showToast(`Bunking ${subjectIds.length} subjects...`, 'info');
+
+                    try {
+                        // Mark all as absent
+                        await Promise.all(subjectIds.map(subjectId =>
+                            fetch('/api/attendance/mark', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ subjectId, status: 'absent', date: today })
+                            })
+                        ));
+
+                        showToast('Mass Bunk Recorded!', 'success');
+                        await this.fetchDashboard();
+                    } catch (e) {
+                        console.error('Mass bunk failed', e);
+                        showToast('Error during mass bunk', 'error');
+                    }
                 },
 
                 async fetchDashboard() {

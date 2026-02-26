@@ -15,8 +15,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// API Routes — Clerk middleware applied only here so API reads req.auth.userId
-app.use('/api', clerkMiddleware(), apiRoutes);
+// Clerk middleware applied globally so ALL routes can process __clerk_handshake tokens
+// (needed for Brave and other browsers that block third-party cookies)
+app.use(clerkMiddleware());
+
+// API Routes
+app.use('/api', apiRoutes);
 
 // Serve static assets (JS, CSS, images, manifest, service-worker)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -111,21 +115,47 @@ app.get('/sign-in', (req, res) => {
                     <div id="sign-in" class="w-full"></div>
                 </div>
                 <script>
+                    // Force localhost instead of 127.0.0.1 for Clerk dev cookies to work reliably
+                    if (window.location.hostname === '127.0.0.1') {
+                        window.location.replace(window.location.href.replace('127.0.0.1', 'localhost'));
+                    }
+
                     async function initClerk() {
                         if (typeof Clerk === 'undefined') {
-                            // Clerk script not loaded yet — retry
                             setTimeout(initClerk, 100);
                             return;
                         }
                         await Clerk.load();
+
+                        // If user is already signed in, go to dashboard
                         if (Clerk.user) {
                             window.location.href = '/';
                             return;
                         }
+
+                        // CRITICAL: Detect hash-based SSO callback from OAuth providers
+                        // Clerk redirects back to /sign-in#/sso-callback?... after Google auth
+                        // We must call handleRedirectCallback instead of mounting SignIn
+                        const hash = window.location.hash;
+                        if (hash && hash.includes('/sso-callback')) {
+                            try {
+                                await Clerk.handleRedirectCallback({
+                                    afterSignInUrl: '/',
+                                    afterSignUpUrl: '/',
+                                    redirectUrl: '/'
+                                });
+                            } catch (err) {
+                                console.error('SSO callback error:', err);
+                                // If callback fails, clear hash and show sign-in form
+                                window.location.hash = '';
+                                window.location.reload();
+                            }
+                            return;
+                        }
+
                         Clerk.mountSignIn(document.getElementById('sign-in'), {
                            appearance: ${clerkOptionsStr},
                            signUpUrl: '/sign-up',
-                           forceRedirectUrl: '/',
                            fallbackRedirectUrl: '/'
                         });
                         setInterval(() => {
@@ -173,20 +203,44 @@ app.get('/sign-up', (req, res) => {
                     <div id="sign-up" class="w-full"></div>
                 </div>
                 <script>
+                    // Force localhost instead of 127.0.0.1 for Clerk dev cookies to work reliably
+                    if (window.location.hostname === '127.0.0.1') {
+                        window.location.replace(window.location.href.replace('127.0.0.1', 'localhost'));
+                    }
+
                     async function initClerk() {
                         if (typeof Clerk === 'undefined') {
                             setTimeout(initClerk, 100);
                             return;
                         }
                         await Clerk.load();
+
+                        // If user is already signed in, go to dashboard
                         if (Clerk.user) {
                             window.location.href = '/';
                             return;
                         }
+
+                        // CRITICAL: Detect hash-based SSO callback from OAuth providers
+                        const hash = window.location.hash;
+                        if (hash && hash.includes('/sso-callback')) {
+                            try {
+                                await Clerk.handleRedirectCallback({
+                                    afterSignInUrl: '/',
+                                    afterSignUpUrl: '/',
+                                    redirectUrl: '/'
+                                });
+                            } catch (err) {
+                                console.error('SSO callback error:', err);
+                                window.location.hash = '';
+                                window.location.reload();
+                            }
+                            return;
+                        }
+
                         Clerk.mountSignUp(document.getElementById('sign-up'), {
                            appearance: ${clerkOptionsStr},
                            signInUrl: '/sign-in',
-                           forceRedirectUrl: '/',
                            fallbackRedirectUrl: '/'
                         });
                         setInterval(() => {
@@ -205,6 +259,49 @@ app.get('/sign-up', (req, res) => {
     `);
 });
 
+app.get('/sso-callback', (req, res) => {
+    res.send(`
+        <html>
+            <head>
+                <meta charset="utf-8" />
+                <title>Authenticating...</title>
+                <script src="https://cdn.tailwindcss.com"></script>
+                <style>
+                    body { background: #050505; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; }
+                    .loader { border: 4px solid #1f1f1f; border-top: 4px solid #ff3b3b; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+                    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                </style>
+            </head>
+            <body>
+                <div class="flex flex-col items-center gap-4">
+                    <div class="loader"></div>
+                    <p class="text-sm font-bold tracking-widest uppercase text-neutral-400">Verifying...</p>
+                </div>
+                <script>
+                    if (window.location.hostname === '127.0.0.1') window.location.hostname = 'localhost';
+                    
+                    async function processSSO() {
+                        if (typeof Clerk === 'undefined') {
+                            setTimeout(processSSO, 100);
+                            return;
+                        }
+                        await Clerk.load();
+                        Clerk.handleRedirectCallback({
+                            afterSignInUrl: '/',
+                            afterSignUpUrl: '/',
+                            redirectUrl: '/'
+                        });
+                    }
+                </script>
+                <script crossorigin="anonymous"
+                    data-clerk-publishable-key="${process.env.CLERK_PUBLISHABLE_KEY}"
+                    src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+                    onload="processSSO()"
+                    type="text/javascript"></script>
+            </body>
+        </html>
+    `);
+});
 
 // Start server
 app.listen(PORT, () => {

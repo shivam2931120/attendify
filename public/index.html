@@ -125,7 +125,6 @@
                 <h1 class="text-white text-3xl sm:text-5xl font-black leading-none tracking-tighter uppercase"
                     x-text="stats.profile && stats.profile.name ? 'HELLO, ' + stats.profile.name.split(' ')[0] : 'OVERVIEW'">
                     OVERVIEW</h1>
-                <p class="text-neutral-500 text-sm font-medium">Real-time attendance tracking and predictions.</p>
             </div>
             <!-- Mass Bunk Action -->
             <button @click="massBunk()"
@@ -140,6 +139,7 @@
                     class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">event_busy</span>
             </button>
         </div>
+        <br>
 
         <!-- Global Stats Row -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 sm:gap-6 mb-8 sm:mb-12">
@@ -196,7 +196,54 @@
         </div>
 
         <template x-if="loading">
-            <div class="text-center py-10 text-neutral-500 italic text-sm">Loading system status...</div>
+            <div class="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-4 no-scrollbar">
+                <!-- Skeleton Card 1 -->
+                <div
+                    class="flex-shrink-0 w-[85vw] md:w-auto md:flex-shrink snap-center rounded bg-card-bg border border-border-color p-6 neo-shadow">
+                    <div class="animate-pulse space-y-4">
+                        <div class="flex justify-between">
+                            <div>
+                                <div class="h-6 bg-neutral-800 rounded w-3/4 mb-2"></div>
+                                <div class="h-3 bg-neutral-800 rounded w-1/2"></div>
+                            </div>
+                            <div class="h-6 w-12 bg-neutral-800 rounded"></div>
+                        </div>
+                        <div class="h-2 bg-neutral-800 rounded-full mt-6 mb-4"></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="h-10 bg-neutral-800 rounded"></div>
+                            <div class="h-10 bg-neutral-800 rounded"></div>
+                        </div>
+                        <div class="flex gap-2 mt-4">
+                            <div class="h-10 grow bg-neutral-800 rounded"></div>
+                            <div class="h-10 grow bg-neutral-800 rounded"></div>
+                            <div class="h-10 grow bg-neutral-800 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Skeleton Card 2 -->
+                <div
+                    class="flex-shrink-0 w-[85vw] md:w-auto md:flex-shrink snap-center rounded bg-card-bg border border-border-color p-6 neo-shadow">
+                    <div class="animate-pulse space-y-4">
+                        <div class="flex justify-between">
+                            <div>
+                                <div class="h-6 bg-neutral-800 rounded w-3/4 mb-2"></div>
+                                <div class="h-3 bg-neutral-800 rounded w-1/2"></div>
+                            </div>
+                            <div class="h-6 w-12 bg-neutral-800 rounded"></div>
+                        </div>
+                        <div class="h-2 bg-neutral-800 rounded-full mt-6 mb-4"></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="h-10 bg-neutral-800 rounded"></div>
+                            <div class="h-10 bg-neutral-800 rounded"></div>
+                        </div>
+                        <div class="flex gap-2 mt-4">
+                            <div class="h-10 grow bg-neutral-800 rounded"></div>
+                            <div class="h-10 grow bg-neutral-800 rounded"></div>
+                            <div class="h-10 grow bg-neutral-800 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </template>
 
         <template x-if="!loading && stats.subjects.length === 0">
@@ -210,12 +257,12 @@
             </div>
         </template>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
+        <div class="flex md:grid md:grid-cols-2 xl:grid-cols-3 overflow-x-auto md:overflow-visible snap-x snap-mandatory gap-4 sm:gap-6 pb-4 no-scrollbar"
             x-show="!loading && stats.subjects.length > 0">
             <!-- Loop through subjects -->
             <template x-for="subject in stats.subjects" :key="subject.id">
                 <div
-                    class="rounded bg-card-bg border border-border-color p-4 sm:p-6 neo-shadow flex flex-col hover:border-primary/50 transition-all">
+                    class="flex-shrink-0 w-[85vw] md:w-auto md:flex-shrink snap-center rounded bg-card-bg border border-border-color p-4 sm:p-6 neo-shadow flex flex-col hover:border-primary/50 transition-all group">
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex-1 w-full max-w-[200px] sm:max-w-[250px]">
                             <div class="flex items-center gap-2 mb-1">
@@ -418,6 +465,7 @@
                     const today = new Date().toISOString().split('T')[0];
 
                     showToast(`Bunking ${subjectIds.length} subjects...`, 'info');
+                    if (navigator.vibrate) navigator.vibrate([50, 100, 50]);
 
                     try {
                         // Mark all as absent
@@ -473,7 +521,7 @@
                     return subject.history.some(record => record.date.startsWith(todayPrefix));
                 },
 
-                async revokeTodayRecords(subjectId) {
+                async revokeTodayRecords(subjectId, skipConfirm = false) {
                     const subject = this.stats.subjects.find(s => s.id === subjectId.toString());
                     if (!subject || !subject.history) return;
 
@@ -482,7 +530,7 @@
 
                     if (todayRecords.length === 0) return;
 
-                    if (!confirm("Are you sure you want to revoke today's actions for this subject ?")) return;
+                    if (!skipConfirm && !confirm("Are you sure you want to revoke today's actions for this subject ?")) return;
 
                     try {
                         await Promise.all(todayRecords.map(record =>
@@ -497,6 +545,9 @@
                 },
 
                 async markAttendance(subjectId, status) {
+                    if (status === 'absent' && navigator.vibrate) navigator.vibrate([20, 50, 20]);
+                    else if (status !== 'absent' && navigator.vibrate) navigator.vibrate(10);
+
                     const today = new Date().toISOString().split('T')[0];
                     try {
                         const res = await fetch('/api/attendance/mark', {
@@ -505,7 +556,9 @@
                             body: JSON.stringify({ subjectId, status, date: today })
                         });
                         if (res.ok) {
-                            showToast('Attendance Marked Successfully', 'success');
+                            showToast('Attendance Marked Successfully', 'success', () => {
+                                this.revokeTodayRecords(subjectId, true); // true for silent mode if we want, or just let it prompt. Wait, undo shouldn't prompt. Let's pass true to skip confirm.
+                            }, 'Undo');
                             await this.fetchDashboard();
                         } else {
                             showToast('Failed to mark attendance', 'error');

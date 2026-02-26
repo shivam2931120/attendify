@@ -1,24 +1,40 @@
 // Common Javascript utility file for Attendify
 
 // Global Toast Notification System
-window.showToast = function (message, type = 'success') {
+window.showToast = function (message, type = 'success', actionCallback = null, actionLabel = 'Undo') {
     const container = document.getElementById('toast-container');
-    if (!container) return; // If page doesn't have the container yet
+    if (!container) return;
 
     const toast = document.createElement('div');
+    toast.className = `px-4 py-3 rounded border text-xs font-black uppercase tracking-widest shadow-lg transform transition-all duration-300 ease-out -translate-y-full opacity-0 flex items-center justify-between gap-4 pointer-events-auto`;
 
-    // Base styles
-    toast.className = `px-4 py-3 rounded border text-xs font-black uppercase tracking-widest shadow-lg transform transition-all duration-300 ease-out -translate-y-full opacity-0 flex items-center gap-2 pointer-events-auto`;
-
+    let htmlContent = `<div class="flex items-center gap-2">`;
     if (type === 'success') {
         toast.classList.add('bg-green-500/10', 'border-green-500/30', 'text-green-500');
-        toast.innerHTML = `<span class="material-symbols-outlined text-[16px]">check_circle</span> ${message}`;
+        htmlContent += `<span class="material-symbols-outlined text-[16px]">check_circle</span> <span>${message}</span>`;
     } else if (type === 'error') {
         toast.classList.add('bg-primary/10', 'border-primary/30', 'text-primary');
-        toast.innerHTML = `<span class="material-symbols-outlined text-[16px]">error</span> ${message}`;
+        htmlContent += `<span class="material-symbols-outlined text-[16px]">error</span> <span>${message}</span>`;
     } else {
         toast.classList.add('bg-white/10', 'border-white/30', 'text-white');
-        toast.innerHTML = `<span class="material-symbols-outlined text-[16px]">info</span> ${message}`;
+        htmlContent += `<span class="material-symbols-outlined text-[16px]">info</span> <span>${message}</span>`;
+    }
+    htmlContent += `</div>`;
+
+    if (actionCallback) {
+        htmlContent += `<button class="action-btn px-3 py-1 bg-white/10 hover:bg-white/20 rounded border border-white/20 transition-colors text-[10px] whitespace-nowrap">${actionLabel}</button>`;
+    }
+
+    toast.innerHTML = htmlContent;
+
+    if (actionCallback) {
+        toast.querySelector('.action-btn').addEventListener('click', () => {
+            actionCallback();
+            // Immediatley dismiss toast on action
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('-translate-y-2', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        });
     }
 
     container.appendChild(toast);

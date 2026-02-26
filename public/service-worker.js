@@ -1,7 +1,7 @@
 // Attendify Service Worker
 // Handles asset caching and class time notifications
 
-const CACHE_NAME = 'attendify-v2';
+const CACHE_NAME = 'attendify-v3';
 const STATIC_ASSETS = [
     '/',
     '/subjects',
@@ -41,8 +41,18 @@ self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
     if (url.origin !== self.location.origin) return;
 
-    // API calls: always network-only
+    // API calls: always network-only (let browser handle directly)
     if (url.pathname.startsWith('/api/')) return;
+
+    // CRITICAL: Never intercept Clerk auth requests — let browser handle them directly
+    // This includes __clerk_handshake tokens, sign-in/sign-up pages, and SSO callbacks
+    if (url.search.includes('__clerk') ||
+        url.pathname.startsWith('/sign-in') ||
+        url.pathname.startsWith('/sign-up') ||
+        url.pathname.startsWith('/sso-callback') ||
+        url.hash.includes('sso-callback')) {
+        return; // Do NOT call event.respondWith — hand off to network
+    }
 
     event.respondWith(
         fetch(event.request)
@@ -54,7 +64,11 @@ self.addEventListener('fetch', event => {
                 }
                 return response;
             })
-            .catch(() => caches.match(event.request))
+            .catch(() => {
+                return caches.match(event.request).then(cached => {
+                    return cached || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+                });
+            })
     );
 });
 

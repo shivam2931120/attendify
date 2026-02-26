@@ -6,7 +6,6 @@ const STATIC_ASSETS = [
     '/',
     '/subjects',
     '/calendar',
-    '/analytics',
     '/calculator',
     '/profile',
     '/js/main.js',

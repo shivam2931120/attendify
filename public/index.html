@@ -75,8 +75,6 @@
                 <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
                     href="/calendar">Calendar</a>
                 <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
-                    href="/analytics">Analytics</a>
-                <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
                     href="/calculator">Calculator</a>
                 <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
                     href="/profile">Profile</a>
@@ -103,11 +101,6 @@
             class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
             <span class="material-symbols-outlined text-[24px]">calendar_month</span>
             <span class="text-[9px] font-black uppercase tracking-widest">Calendar</span>
-        </a>
-        <a href="/analytics"
-            class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
-            <span class="material-symbols-outlined text-[24px]">insights</span>
-            <span class="text-[9px] font-black uppercase tracking-widest">Analytics</span>
         </a>
         <a href="/profile"
             class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
@@ -297,9 +290,10 @@
                     </div>
 
                     <!-- Quick Marks Actions -->
-                    <div class="mt-auto h-[120px] flex flex-col justify-end">
-                        <!-- Default Action Buttons (Shows if NOT marked today) -->
-                        <div x-show="!isSubjectMarkedToday(subject.id)" class="grid grid-cols-3 gap-2">
+                    <div class="mt-auto h-[120px] flex flex-col justify-end relative">
+                        <!-- Default Action Buttons (Shows if scheduled and NOT marked today) -->
+                        <div x-show="isSubjectScheduledToday(subject.id) && !isSubjectMarkedToday(subject.id)"
+                            class="grid grid-cols-3 gap-2">
                             <button @click="markAttendance(subject.id, 'present')"
                                 class="flex flex-col items-center justify-center py-2 bg-white/5 hover:bg-green-500/20 hover:text-green-500 border border-transparent hover:border-green-500/50 rounded transition-all text-neutral-400">
                                 <span class="material-symbols-outlined text-lg mb-1">check_circle</span>
@@ -344,6 +338,13 @@
                                     <path d="M3 3v5h5"></path>
                                 </svg>
                             </button>
+                        </div>
+
+                        <!-- Empty State (Shows if NOT scheduled and NOT marked today) -->
+                        <div x-show="!isSubjectScheduledToday(subject.id) && !isSubjectMarkedToday(subject.id)"
+                            style="display: none;" class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-[15px] font-black uppercase tracking-[0.7em] text-neutral-400">No Class
+                                Today</span>
                         </div>
                     </div>
 

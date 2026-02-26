@@ -41,9 +41,6 @@ app.get('/calculator', (req, res) => {
 app.get('/profile', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'profile.html'));
 });
-app.get('/analytics', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'analytics.html'));
-});
 app.get('/subject-details', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'subject-details.html'));
 });

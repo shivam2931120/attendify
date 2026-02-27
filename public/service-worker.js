@@ -4,7 +4,6 @@
 const CACHE_NAME = 'attendify-v3';
 const STATIC_ASSETS = [
     '/',
-    '/subjects',
     '/calendar',
     '/calculator',
     '/profile',

@@ -29,9 +29,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-app.get('/subjects', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'subjects.html'));
-});
 app.get('/calendar', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'calendar.html'));
 });

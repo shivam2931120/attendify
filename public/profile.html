@@ -14,7 +14,8 @@
     <!-- Clerk Auth -->
     <script async crossorigin="anonymous"
         data-clerk-publishable-key="pk_test_YnJpZ2h0LW1vcmF5LTIuY2xlcmsuYWNjb3VudHMuZGV2JA"
-        src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js" type="text/javascript"></script>
+        src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+        type="text/javascript"></script>
 
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
@@ -77,8 +78,6 @@
                 <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
                     href="/">Dashboard</a>
                 <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
-                    href="/subjects">Subjects</a>
-                <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
                     href="/calendar">Calendar</a>
                 <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
                     href="/calculator">Calculator</a>
@@ -98,11 +97,6 @@
             <span class="material-symbols-outlined text-[24px]">home</span>
             <span class="text-[9px] font-black uppercase tracking-widest">Home</span>
         </a>
-        <a href="/subjects"
-            class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
-            <span class="material-symbols-outlined text-[24px]">library_books</span>
-            <span class="text-[9px] font-black uppercase tracking-widest">Subjects</span>
-        </a>
         <a href="/calendar"
             class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
             <span class="material-symbols-outlined text-[24px]">calendar_month</span>
@@ -117,11 +111,8 @@
     <main class="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-10 pt-4 sm:pt-10 pb-24 md:pb-10" id="main-content"
         x-show="!loading" style="opacity: 0; transition: opacity 0.5s ease;">
 
-        <div class="flex flex-col gap-2 mb-6 sm:mb-10 text-center">
-            <h1 class="text-white text-3xl sm:text-5xl font-black leading-none tracking-tighter uppercase">Global
-                Configuration</h1>
-            <p class="text-neutral-500 text-sm font-medium">Manage your personal details and system-wide attendance
-                constraints.</p>
+        <div class="flex flex-col gap-2 mb-6 sm:mb-10">
+            <h1 class="text-white text-3xl sm:text-5xl font-black leading-none tracking-tighter uppercase">Profile</h1>
         </div>
 
         <div class="rounded bg-card-bg border border-border-color p-8 neo-shadow">

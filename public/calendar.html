@@ -5,6 +5,9 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Attendify - Interactive Calendar</title>
+    <style>
+    #nprogress-bar { position:fixed;top:0;left:0;height:2px;background:#ff3b3b;z-index:9999;transition:width 0.3s ease,opacity 0.3s ease;width:0%;opacity:0; }
+    </style>
     <link rel="icon" href="/logo.png" type="image/png">
 
     <!-- PWA -->
@@ -50,6 +53,7 @@
 
 <body class="dark bg-deep-bg text-white font-display min-h-screen flex flex-col" x-data="calendarData()"
     x-init="initData()">
+    <div id="nprogress-bar"></div>
 
     <!-- Header Navigation -->
     <header
@@ -66,13 +70,13 @@
         <div class="flex flex-1 justify-end gap-4 sm:gap-6 sm:gap-10 items-center">
             <nav class="hidden md:flex items-center gap-8">
                 <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
-                    href="/">Dashboard</a>
+                    href="/" onclick="startNav()">Dashboard</a>
                 <a class="text-primary border-b border-primary py-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest"
-                    href="/calendar">Calendar</a>
+                    href="/calendar" onclick="startNav()">Calendar</a>
                 <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
-                    href="/calculator">Calculator</a>
+                    href="/calculator" onclick="startNav()">Calculator</a>
                 <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
-                    href="/profile">Profile</a>
+                    href="/profile" onclick="startNav()">Profile</a>
             </nav>
             <div class="hidden">
                 <div id="user-button"></div>
@@ -83,15 +87,19 @@
     <!-- Mobile Bottom Nav -->
     <nav
         class="md:hidden fixed bottom-0 left-0 right-0 bg-deep-bg border-t border-border-color z-50 flex justify-around items-center pt-2 pb-4 px-2 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]">
-        <a href="/" class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
+        <a href="/" onclick="startNav()" class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
             <span class="material-symbols-outlined text-[24px]">home</span>
             <span class="text-[9px] font-black uppercase tracking-widest">Home</span>
         </a>
-        <a href="/calendar" class="flex flex-col items-center gap-1 p-2 text-primary">
+        <a href="/calendar" onclick="startNav()" class="flex flex-col items-center gap-1 p-2 text-primary">
             <span class="material-symbols-outlined text-[24px]">calendar_month</span>
             <span class="text-[9px] font-black uppercase tracking-widest">Calendar</span>
         </a>
-        <a href="/profile"
+        <a href="/calculator" onclick="startNav()" class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
+            <span class="material-symbols-outlined text-[24px]">calculate</span>
+            <span class="text-[9px] font-black uppercase tracking-widest">Calc</span>
+        </a>
+        <a href="/profile" onclick="startNav()"
             class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
             <span class="material-symbols-outlined text-[24px]">person</span>
             <span class="text-[9px] font-black uppercase tracking-widest">Profile</span>
@@ -107,7 +115,7 @@
             </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-8">
             <!-- Sidebar for Subjects List -->
             <div class="md:col-span-1 rounded bg-card-bg border border-border-color p-4 flex flex-col gap-2 neo-shadow">
                 <h3
@@ -118,7 +126,10 @@
                     <button @click="selectSubject(subject)"
                         class="text-left w-full px-4 py-3 rounded text-xs font-bold transition-all border border-transparent"
                         :class="selectedSubject && selectedSubject.id === subject.id ? 'bg-primary border-primary text-white shadow-[0_0_15px_rgba(255,59,59,0.3)]' : 'bg-white/5 text-neutral-400 hover:bg-white/10'">
-                        <span class="uppercase tracking-widest block truncate" x-text="subject.subject_name"></span>
+                        <span class="uppercase tracking-widest block truncate text-left" x-text="subject.subject_name"></span>
+                        <span class="text-[9px] font-bold mt-0.5 block"
+                            :class="subject.current_percentage >= subject.min_requirement_percentage ? 'text-green-400/70' : 'text-primary/70'"
+                            x-text="subject.current_percentage + '%'"></span>
                     </button>
                 </template>
                 <template x-if="subjects.length === 0">
@@ -140,16 +151,17 @@
 
                 <template x-if="selectedSubject">
                     <div>
-                        <div class="flex justify-between items-center mb-6 pb-4 border-b border-border-color">
-                            <h2 class="text-lg sm:text-2xl font-black uppercase text-white"
+                        <div class="flex flex-wrap justify-between items-center mb-6 pb-4 border-b border-border-color gap-3">
+                            <h2 class="text-base sm:text-2xl font-black uppercase text-white truncate max-w-[160px] sm:max-w-xs"
                                 x-text="selectedSubject.subject_name"></h2>
-                            <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2 sm:gap-4 flex-shrink-0">
                                 <button @click="changeMonth(-1)"
                                     class="w-8 h-8 flex items-center justify-center rounded border border-border-color bg-deep-bg hover:text-primary transition-all"><span
                                         class="material-symbols-outlined text-sm">chevron_left</span></button>
                                 <span
-                                    class="text-sm font-black uppercase tracking-widest text-neutral-300 w-32 text-center"
+                                    class="text-[11px] sm:text-sm font-black uppercase tracking-widest text-neutral-300 w-24 sm:w-32 text-center"
                                     x-text="currentMonthName + ' ' + currentYear"></span>
+                                <button @click="goToToday()" class="text-[9px] font-black uppercase tracking-widest border border-border-color px-2 py-1 rounded hover:border-primary hover:text-primary transition-all text-neutral-500">Today</button>
                                 <button @click="changeMonth(1)"
                                     class="w-8 h-8 flex items-center justify-center rounded border border-border-color bg-deep-bg hover:text-primary transition-all"><span
                                         class="material-symbols-outlined text-sm">chevron_right</span></button>
@@ -165,9 +177,10 @@
                         </div>
 
                         <div class="grid grid-cols-7 gap-1">
-                            <!-- Blank days -->
-                            <template x-for="blank in blankDays">
-                                <div class="aspect-square bg-deep-bg/50 border border-border-color rounded opacity-30">
+                            <!-- Blank days — weekend columns get a subtle tint -->
+                            <template x-for="(blank, index) in blankDays" :key="'b'+index">
+                                <div class="aspect-square rounded border border-border-color opacity-20"
+                                    :class="(7 - blankDays.length + index) % 7 === 0 || (7 - blankDays.length + index) % 7 === 6 ? 'bg-white/5' : 'bg-deep-bg/50'">
                                 </div>
                             </template>
 
@@ -190,7 +203,7 @@
         </div>
 
         <!-- Date Action Modal Overlay inside the main view for quick actions -->
-        <div x-show="isActionModalOpen" style="display: none;"
+        <div x-show="isActionModalOpen" style="display:none;"
             class="fixed inset-0 z-[100] flex justify-center items-center px-4">
             <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" @click="closeActionModal()">
             </div>
@@ -205,6 +218,14 @@
                     <button @click="closeActionModal()" class="text-neutral-500 hover:text-white transition-all"><span
                             class="material-symbols-outlined">close</span></button>
                 </div>
+
+                <!-- Future date warning -->
+                <template x-if="isFutureDate(activeDate)">
+                    <div class="mb-4 p-2 bg-orange-500/10 border border-orange-500/30 rounded flex items-center gap-2">
+                        <span class="material-symbols-outlined text-orange-500 text-[16px]">warning</span>
+                        <span class="text-orange-500 text-[10px] font-black uppercase tracking-widest">Future date — are you sure?</span>
+                    </div>
+                </template>
 
                 <!-- Existing records list for the date -->
                 <div x-show="activeDateRecords.length > 0" class="mb-6">
@@ -252,6 +273,17 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Holiday toggle -->
+                <div class="mt-4 pt-4 border-t border-border-color">
+                    <p class="text-[10px] uppercase font-black tracking-widest text-neutral-500 mb-2 border-b border-border-color pb-2">Holiday</p>
+                    <button @click="toggleHoliday(getFullDateStringForDay(activeDate)); activeDateRecords = getRecordsForDay(activeDate);"
+                        class="w-full flex items-center justify-center gap-2 p-3 rounded border transition-all"
+                        :class="isHoliday(activeDate) ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-500' : 'bg-white/5 border-border-color text-neutral-400 hover:bg-yellow-500/10 hover:border-yellow-500/30 hover:text-yellow-500'">
+                        <span class="material-symbols-outlined text-[18px]">beach_access</span>
+                        <span class="text-[9px] font-black uppercase tracking-widest" x-text="isHoliday(activeDate) ? 'Remove Holiday' : 'Mark as Holiday'"></span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -259,6 +291,12 @@
 
     <script src="/js/main.js"></script>
     <script>
+        function startNav(e, el) {
+            const bar = document.getElementById('nprogress-bar');
+            bar.style.opacity = '1';
+            bar.style.width = '60%';
+        }
+
         document.addEventListener('alpine:init', () => {
             Alpine.data('calendarData', () => ({
                 loading: true,
@@ -267,8 +305,10 @@
                 selectedSubject: null,
                 history: [],
 
+                // Holidays stored in localStorage { "YYYY-MM-DD": true }
+                holidays: {},
+
                 // Calendar State
-                currentDate: new Date(),
                 currentMonth: new Date().getMonth(),
                 currentYear: new Date().getFullYear(),
                 daysInMonth: [],
@@ -279,7 +319,7 @@
                 activeDate: null,
                 activeDateRecords: [],
 
-                monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+                monthNames: ["January","February","March","April","May","June","July","August","September","October","November","December"],
 
                 async initData() {
                     window.addEventListener('load', async () => {
@@ -289,8 +329,13 @@
                         if (Clerk.user) {
                             Clerk.mountUserButton(userButtonDiv);
                             document.getElementById('main-content').style.opacity = '1';
+                            const bar = document.getElementById('nprogress-bar');
+                            bar.style.opacity = '1'; bar.style.width = '70%';
+                            this.loadHolidays();
                             await this.fetchSubjects();
                             this.getDays();
+                            bar.style.width = '100%';
+                            setTimeout(() => { bar.style.opacity = '0'; bar.style.width = '0%'; }, 400);
                         } else {
                             window.location.href = '/sign-in';
                         }
@@ -302,23 +347,22 @@
                 },
 
                 getDays() {
-                    let daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
-                    let dayOfWeek = new Date(this.currentYear, this.currentMonth, 1).getDay();
-
+                    const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
+                    const dayOfWeek = new Date(this.currentYear, this.currentMonth, 1).getDay();
                     this.blankDays = Array.from({ length: dayOfWeek }, (_, i) => i);
                     this.daysInMonth = Array.from({ length: daysInMonth }, (_, i) => i + 1);
                 },
 
                 changeMonth(delta) {
                     this.currentMonth += delta;
-                    if (this.currentMonth < 0) {
-                        this.currentMonth = 11;
-                        this.currentYear--;
-                    }
-                    if (this.currentMonth > 11) {
-                        this.currentMonth = 0;
-                        this.currentYear++;
-                    }
+                    if (this.currentMonth < 0) { this.currentMonth = 11; this.currentYear--; }
+                    if (this.currentMonth > 11) { this.currentMonth = 0; this.currentYear++; }
+                    this.getDays();
+                },
+
+                goToToday() {
+                    this.currentMonth = new Date().getMonth();
+                    this.currentYear = new Date().getFullYear();
                     this.getDays();
                 },
 
@@ -326,6 +370,10 @@
                     try {
                         const response = await fetch('/api/subjects');
                         this.subjects = await response.json();
+                        // Auto-select the first subject
+                        if (this.subjects.length > 0) {
+                            await this.selectSubject(this.subjects[0]);
+                        }
                     } catch (err) {
                         console.error(err);
                         window.showToast('Failed to load subjects', 'error');
@@ -347,10 +395,34 @@
                     }
                 },
 
-                // Calendar Visual Helpers
+                // ── Holiday helpers ───────────────────────────────────────
+                loadHolidays() {
+                    try {
+                        const saved = localStorage.getItem('attendify_holidays');
+                        if (saved) this.holidays = JSON.parse(saved);
+                    } catch(e) { this.holidays = {}; }
+                },
+
+                isHoliday(day) {
+                    if (!day) return false;
+                    const dow = new Date(this.currentYear, this.currentMonth, day).getDay();
+                    if (dow === 0 || dow === 6) return true; // Sunday or Saturday
+                    return !!this.holidays[this.getFullDateStringForDay(day)];
+                },
+
+                toggleHoliday(dateStr) {
+                    if (this.holidays[dateStr]) {
+                        delete this.holidays[dateStr];
+                    } else {
+                        this.holidays[dateStr] = true;
+                    }
+                    this.holidays = { ...this.holidays }; // trigger Alpine reactivity
+                    localStorage.setItem('attendify_holidays', JSON.stringify(this.holidays));
+                },
+
+                // ── Calendar Visual Helpers ───────────────────────────────
                 getFullDateStringForDay(day) {
                     const d = new Date(this.currentYear, this.currentMonth, day);
-                    // Adjust to local ISO string equivalent to match history dates "YYYY-MM-DD"
                     const offset = d.getTimezoneOffset();
                     d.setMinutes(d.getMinutes() - offset);
                     return d.toISOString().split('T')[0];
@@ -363,45 +435,54 @@
                 },
 
                 hasRecord(day) {
-                    return this.getRecordsForDay(day).length > 0;
+                    return this.getRecordsForDay(day).length > 0 || this.isHoliday(day);
                 },
 
                 getDayStatusClass(day) {
+                    // Holiday takes highest priority
+                    if (this.isHoliday(day)) return "bg-yellow-500/10 border-yellow-500/30 text-yellow-400";
+
                     const todayStr = new Date().toISOString().split('T')[0];
                     const thisDayStr = this.getFullDateStringForDay(day);
-                    let baseClass = "bg-deep-bg";
+                    const dow = new Date(this.currentYear, this.currentMonth, day).getDay();
+                    const isWeekend = dow === 0 || dow === 6;
 
-                    if (todayStr === thisDayStr) {
-                        baseClass = "bg-white/10 border-white/50";
-                    }
+                    let baseClass = isWeekend ? "bg-white/[0.02] border-white/5" : "bg-deep-bg";
+                    if (todayStr === thisDayStr) baseClass = "bg-white/10 border-white/50";
 
                     const records = this.getRecordsForDay(day);
                     if (records.length === 0) return baseClass;
 
-                    // If it has records, prioritize by latest or general status
-                    const hasAbsent = records.some(r => r.status === 'absent');
+                    const hasAbsent  = records.some(r => r.status === 'absent');
                     const hasPresent = records.some(r => r.status === 'present');
-                    const hasExtra = records.some(r => r.status === 'extra');
+                    const hasExtra   = records.some(r => r.status === 'extra');
 
-                    if (hasAbsent) return "bg-primary/5 hover:bg-primary/20 border-primary/20 text-white";
+                    if (hasAbsent)  return "bg-primary/5 hover:bg-primary/20 border-primary/20 text-white";
                     if (hasPresent) return "bg-green-500/5 hover:bg-green-500/20 border-green-500/20 text-white";
-                    if (hasExtra) return "bg-blue-500/5 hover:bg-blue-500/20 border-blue-500/20 text-white";
+                    if (hasExtra)   return "bg-blue-500/5 hover:bg-blue-500/20 border-blue-500/20 text-white";
 
                     return baseClass;
                 },
 
                 getIndicatorClass(day) {
+                    if (this.isHoliday(day)) return "bg-yellow-500";
                     const records = this.getRecordsForDay(day);
                     if (records.length === 0) return "";
-                    const hasAbsent = records.some(r => r.status === 'absent');
+                    const hasAbsent  = records.some(r => r.status === 'absent');
                     const hasPresent = records.some(r => r.status === 'present');
-
-                    if (hasAbsent) return "bg-primary";
+                    if (hasAbsent)  return "bg-primary";
                     if (hasPresent) return "bg-green-500";
                     return "bg-blue-500";
                 },
 
-                // Action Modal Interactions
+                isFutureDate(day) {
+                    if (!day) return false;
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const selected = new Date(this.currentYear, this.currentMonth, day);
+                    return selected > today;
+                },
+
+                // ── Modal Interactions ────────────────────────────────────
                 openDateAction(day) {
                     this.activeDate = day;
                     this.activeDateRecords = this.getRecordsForDay(day);
@@ -425,16 +506,12 @@
                         const res = await fetch('/api/attendance/mark', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                subjectId: this.selectedSubject.id,
-                                status: status,
-                                date: dateString
-                            })
+                            body: JSON.stringify({ subjectId: this.selectedSubject.id, status, date: dateString })
                         });
                         if (res.ok) {
                             window.showToast("Attendance Saved", "success");
-                            await this.selectSubject(this.selectedSubject); // Refresh local history
-                            this.activeDateRecords = this.getRecordsForDay(this.activeDate); // Update modal UI
+                            await this.selectSubject(this.selectedSubject);
+                            this.activeDateRecords = this.getRecordsForDay(this.activeDate);
                         } else {
                             window.showToast("Failed to save", "error");
                         }
@@ -450,7 +527,7 @@
                         if (res.ok) {
                             window.showToast('Record Deleted', 'success');
                             await this.selectSubject(this.selectedSubject);
-                            this.activeDateRecords = this.getRecordsForDay(this.activeDate); // Update modal UI
+                            this.activeDateRecords = this.getRecordsForDay(this.activeDate);
                         } else {
                             window.showToast('Failed to delete', 'error');
                         }
@@ -462,15 +539,15 @@
 
                 statusTextColor(status) {
                     if (status === 'present') return 'text-green-500';
-                    if (status === 'absent') return 'text-primary';
-                    if (status === 'extra') return 'text-blue-500';
+                    if (status === 'absent')  return 'text-primary';
+                    if (status === 'extra')   return 'text-blue-500';
                     return 'text-white';
                 },
 
                 statusIcon(status) {
                     if (status === 'present') return 'check';
-                    if (status === 'absent') return 'close';
-                    if (status === 'extra') return 'add';
+                    if (status === 'absent')  return 'close';
+                    if (status === 'extra')   return 'add';
                     return 'info';
                 }
             }));

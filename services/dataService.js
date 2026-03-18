@@ -1,5 +1,15 @@
 const { clerkClient } = require('@clerk/express');
 
+function normalizePercentage(value, fallback = 75.0) {
+    const parsed = Number.parseFloat(value);
+    if (!Number.isFinite(parsed)) return fallback;
+    return Math.min(100, Math.max(0, parsed));
+}
+
+function isApproximatelyEqual(a, b, epsilon = 0.001) {
+    return Math.abs(a - b) <= epsilon;
+}
+
 // Default user data structure
 function defaultUserData() {
     return {
@@ -33,6 +43,28 @@ class DataService {
             if (!d.subjects) d.subjects = [];
             if (!d.timetable) d.timetable = [];
             if (d.college_location === undefined) d.college_location = null;
+
+            d.profile.attendance_requirement_percentage = normalizePercentage(
+                d.profile.attendance_requirement_percentage,
+                defaultUserData().profile.attendance_requirement_percentage
+            );
+
+            d.subjects = (d.subjects || []).map(subject => {
+                const totalClasses = Math.max(0, Number(subject.total_classes) || 0);
+                const attendedClasses = Math.min(totalClasses, Math.max(0, Number(subject.attended_classes) || 0));
+
+                return {
+                    ...subject,
+                    min_requirement_percentage: normalizePercentage(
+                        subject.min_requirement_percentage,
+                        d.profile.attendance_requirement_percentage
+                    ),
+                    total_classes: totalClasses,
+                    attended_classes: attendedClasses,
+                    history: Array.isArray(subject.history) ? subject.history : []
+                };
+            });
+
             return d;
         } catch (err) {
             console.error('Error reading Clerk metadata:', err);
@@ -58,7 +90,42 @@ class DataService {
 
     static async updateProfile(userId, profileUpdates) {
         const data = await this.getUserData(userId);
-        data.profile = { ...data.profile, ...profileUpdates };
+
+        const previousRequirement = normalizePercentage(
+            data.profile.attendance_requirement_percentage,
+            defaultUserData().profile.attendance_requirement_percentage
+        );
+
+        const hasRequirementUpdate = profileUpdates.attendance_requirement_percentage !== undefined;
+        const nextRequirement = hasRequirementUpdate
+            ? normalizePercentage(profileUpdates.attendance_requirement_percentage, previousRequirement)
+            : previousRequirement;
+
+        data.profile = {
+            ...data.profile,
+            ...profileUpdates,
+            attendance_requirement_percentage: nextRequirement
+        };
+
+        if (hasRequirementUpdate) {
+            data.subjects = (data.subjects || []).map(subject => {
+                const normalizedSubjectRequirement = normalizePercentage(subject.min_requirement_percentage, previousRequirement);
+                const hasInvalidRequirement = !Number.isFinite(Number.parseFloat(subject.min_requirement_percentage));
+                const shouldSyncWithGlobal =
+                    subject.min_requirement_percentage === undefined ||
+                    subject.min_requirement_percentage === null ||
+                    hasInvalidRequirement ||
+                    isApproximatelyEqual(normalizedSubjectRequirement, previousRequirement);
+
+                return {
+                    ...subject,
+                    min_requirement_percentage: shouldSyncWithGlobal
+                        ? nextRequirement
+                        : normalizedSubjectRequirement
+                };
+            });
+        }
+
         await this.saveUserData(userId, data);
         return data.profile;
     }
@@ -75,11 +142,16 @@ class DataService {
 
     static async createSubject(userId, subjectData) {
         const data = await this.getUserData(userId);
+        const defaultRequirement = normalizePercentage(
+            data.profile && data.profile.attendance_requirement_percentage,
+            defaultUserData().profile.attendance_requirement_percentage
+        );
+
         const newSubject = {
             id: Date.now().toString(),
             subject_name: subjectData.subject_name,
             faculty_name: subjectData.faculty_name,
-            min_requirement_percentage: parseFloat(subjectData.min_requirement_percentage),
+            min_requirement_percentage: normalizePercentage(subjectData.min_requirement_percentage, defaultRequirement),
             total_classes: 0,
             attended_classes: 0,
             history: []

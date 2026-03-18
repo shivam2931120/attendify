@@ -34,12 +34,12 @@
         // Check if this record was already auto-marked today for a subject
         wasMarkedToday(subjectId) {
             const key = `geo_marked_${subjectId}_${new Date().toISOString().split('T')[0]}`;
-            return sessionStorage.getItem(key) === '1';
+            return localStorage.getItem(key) === '1';
         },
 
         setMarkedToday(subjectId) {
             const key = `geo_marked_${subjectId}_${new Date().toISOString().split('T')[0]}`;
-            sessionStorage.setItem(key, '1');
+            localStorage.setItem(key, '1');
         },
 
         // Main function: check geofence and auto-mark if applicable

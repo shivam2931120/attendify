@@ -1,11 +1,10 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const { clerkMiddleware } = require('@clerk/express');
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const { clerkMiddleware } = require("@clerk/express");
 
-
-const apiRoutes = require('./routes/api');
+const apiRoutes = require("./routes/api");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,68 +19,72 @@ app.use(express.urlencoded({ extended: true }));
 app.use(clerkMiddleware());
 
 // API Routes
-app.use('/api', apiRoutes);
+app.use("/api", apiRoutes);
 
 // Serve static assets (JS, CSS, images, manifest, service-worker)
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
 
 // UI Routes — auth enforced client-side by Clerk.js on each page
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-app.get('/calendar', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'calendar.html'));
+app.get("/calendar", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "calendar.html"));
 });
-app.get('/calculator', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'calculator.html'));
+app.get("/calculator", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "calculator.html"));
 });
-app.get('/profile', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'profile.html'));
+app.get("/profile", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "profile.html"));
 });
-app.get('/subject-details', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'subject-details.html'));
+app.get("/subject-details", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "subject-details.html"));
 });
 
 const clerkAppearance = {
-    layout: {
-        logoPlacement: 'none',
-        socialButtonsVariant: 'blockButton'
-    },
-    variables: {
-        colorPrimary: '#ff3b3b',
-        colorBackground: '#0d0d0d',
-        colorText: 'white',
-        colorDanger: '#ff3b3b',
-        colorInputBackground: '#1f1f1f',
-        colorInputText: 'white',
-    },
-    elements: {
-        rootBox: 'w-full',
-        card: 'bg-transparent shadow-none p-0 w-full max-w-sm mx-auto border-none sm:bg-[#0d0d0d] sm:border sm:border-[#1f1f1f] sm:shadow-2xl sm:p-8 sm:rounded-2xl',
-        headerTitle: 'hidden',
-        headerSubtitle: 'hidden',
-        socialButtonsBlockButton: 'text-white border border-[#2a2a2a] bg-[#141414] hover:bg-[#1f1f1f] flex justify-center py-2.5 rounded-lg shadow-sm transition-all',
-        socialButtonsBlockButtonText: 'text-white font-semibold',
-        dividerRow: 'border-[#2a2a2a]',
-        dividerText: 'text-neutral-500 font-medium',
-        formFieldLabel: 'text-neutral-400 font-bold text-[10px] uppercase tracking-wider mb-1',
-        formFieldInput: 'bg-[#141414] border-[#2a2a2a] text-white rounded-lg px-3 py-2.5 focus:border-[#ff3b3b] focus:ring-1 focus:ring-[#ff3b3b] transition-all',
-        footerActionText: 'text-neutral-400',
-        footerActionLink: 'text-[#ff3b3b] hover:text-[#ff4d4d] font-bold',
-        identityPreviewText: 'text-white',
-        identityPreviewEditButtonIcon: 'text-neutral-400',
-        formButtonPrimary: 'bg-[#ff3b3b] w-full hover:bg-[#ff4d4d] text-white font-black tracking-widest uppercase text-xs py-3 rounded-lg transition-colors mt-2',
-    }
+  layout: {
+    logoPlacement: "none",
+    socialButtonsVariant: "blockButton",
+  },
+  variables: {
+    colorPrimary: "#ff3b3b",
+    colorBackground: "#0d0d0d",
+    colorText: "white",
+    colorDanger: "#ff3b3b",
+    colorInputBackground: "#1f1f1f",
+    colorInputText: "white",
+  },
+  elements: {
+    rootBox: "w-full",
+    card: "bg-transparent shadow-none p-0 w-full max-w-sm mx-auto border-none sm:bg-[#0d0d0d] sm:border sm:border-[#1f1f1f] sm:shadow-2xl sm:p-8 sm:rounded-2xl",
+    headerTitle: "hidden",
+    headerSubtitle: "hidden",
+    socialButtonsBlockButton:
+      "text-white border border-[#2a2a2a] bg-[#141414] hover:bg-[#1f1f1f] flex justify-center py-2.5 rounded-lg shadow-sm transition-all",
+    socialButtonsBlockButtonText: "text-white font-semibold",
+    dividerRow: "border-[#2a2a2a]",
+    dividerText: "text-neutral-500 font-medium",
+    formFieldLabel:
+      "text-neutral-400 font-bold text-[10px] uppercase tracking-wider mb-1",
+    formFieldInput:
+      "bg-[#141414] border-[#2a2a2a] text-white rounded-lg px-3 py-2.5 focus:border-[#ff3b3b] focus:ring-1 focus:ring-[#ff3b3b] transition-all",
+    footerActionText: "text-neutral-400",
+    footerActionLink: "text-[#ff3b3b] hover:text-[#ff4d4d] font-bold",
+    identityPreviewText: "text-white",
+    identityPreviewEditButtonIcon: "text-neutral-400",
+    formButtonPrimary:
+      "bg-[#ff3b3b] w-full hover:bg-[#ff4d4d] text-white font-black tracking-widest uppercase text-xs py-3 rounded-lg transition-colors mt-2",
+  },
 };
 
 const clerkOptionsStr = JSON.stringify(clerkAppearance);
 
 // Suppress favicon 404 in console if missing (though we will use logo.png)
-app.get('/favicon.ico', (req, res) => res.status(204).end());
+app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 // Protected UI Routes - using Clerk requireAuth
-app.get('/sign-in', (req, res) => {
-    res.send(`
+app.get("/sign-in", (req, res) => {
+  res.send(`
         <html>
             <head>
                 <meta charset="utf-8" />
@@ -152,10 +155,17 @@ app.get('/sign-in', (req, res) => {
                            signUpUrl: '/sign-up',
                            fallbackRedirectUrl: '/'
                         });
-                        setInterval(() => {
-                            document.querySelectorAll('.cl-internal-b3al6g').forEach(el => { el.style.display = 'none'; el.style.opacity = '0'; });
-                            document.querySelectorAll('a[href*="clerk.com"]').forEach(el => { el.style.display = 'none'; el.style.opacity = '0'; });
-                        }, 500);
+                        // Use MutationObserver instead of setInterval — fires once on DOM change, no leak
+                        const _hideClerkBranding = () => {
+                            document.querySelectorAll('.cl-internal-b3al6g, a[href*="clerk.com"]').forEach(el => {
+                                el.style.cssText += 'display:none!important;opacity:0!important;pointer-events:none!important;';
+                            });
+                        };
+                        _hideClerkBranding();
+                        const _brandObserver = new MutationObserver(_hideClerkBranding);
+                        _brandObserver.observe(document.body, { childList: true, subtree: true });
+                        // Disconnect after 10 seconds — Clerk UI is fully rendered by then
+                        setTimeout(() => _brandObserver.disconnect(), 10000);
                     }
                 </script>
                 <script crossorigin="anonymous"
@@ -168,8 +178,8 @@ app.get('/sign-in', (req, res) => {
     `);
 });
 
-app.get('/sign-up', (req, res) => {
-    res.send(`
+app.get("/sign-up", (req, res) => {
+  res.send(`
         <html>
             <head>
                 <meta charset="utf-8" />
@@ -237,10 +247,17 @@ app.get('/sign-up', (req, res) => {
                            signInUrl: '/sign-in',
                            fallbackRedirectUrl: '/'
                         });
-                        setInterval(() => {
-                            document.querySelectorAll('.cl-internal-b3al6g').forEach(el => { el.style.display = 'none'; el.style.opacity = '0'; });
-                            document.querySelectorAll('a[href*="clerk.com"]').forEach(el => { el.style.display = 'none'; el.style.opacity = '0'; });
-                        }, 500);
+                        // Use MutationObserver instead of setInterval — fires once on DOM change, no leak
+                        const _hideClerkBranding = () => {
+                            document.querySelectorAll('.cl-internal-b3al6g, a[href*="clerk.com"]').forEach(el => {
+                                el.style.cssText += 'display:none!important;opacity:0!important;pointer-events:none!important;';
+                            });
+                        };
+                        _hideClerkBranding();
+                        const _brandObserver = new MutationObserver(_hideClerkBranding);
+                        _brandObserver.observe(document.body, { childList: true, subtree: true });
+                        // Disconnect after 10 seconds — Clerk UI is fully rendered by then
+                        setTimeout(() => _brandObserver.disconnect(), 10000);
                     }
                 </script>
                 <script crossorigin="anonymous"
@@ -253,8 +270,8 @@ app.get('/sign-up', (req, res) => {
     `);
 });
 
-app.get('/sso-callback', (req, res) => {
-    res.send(`
+app.get("/sso-callback", (req, res) => {
+  res.send(`
         <html>
             <head>
                 <meta charset="utf-8" />
@@ -273,7 +290,7 @@ app.get('/sso-callback', (req, res) => {
                 </div>
                 <script>
                     if (window.location.hostname === '127.0.0.1') window.location.hostname = 'localhost';
-                    
+
                     async function processSSO() {
                         if (typeof Clerk === 'undefined') {
                             setTimeout(processSSO, 100);
@@ -299,5 +316,5 @@ app.get('/sso-callback', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`Attendify server running on http://localhost:${PORT}`);
+  console.log(`Attendify server running on http://localhost:${PORT}`);
 });

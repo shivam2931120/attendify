@@ -1,668 +1,1261 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <title>Attendify - Profile</title>
+        <link rel="icon" href="/logo.png" type="image/png" />
+        <style>
+            #nprogress-bar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 2px;
+                background: #ff3b3b;
+                z-index: 9999;
+                transition:
+                    width 0.3s ease,
+                    opacity 0.3s ease;
+                width: 0%;
+                opacity: 0;
+            }
+        </style>
 
-<head>
-    <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Attendify - Profile Settings</title>
-    <link rel="icon" href="/logo.png" type="image/png">
+        <!-- PWA -->
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#050505" />
 
-    <!-- PWA -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#050505">
+        <!-- Clerk Auth -->
+        <script
+            async
+            crossorigin="anonymous"
+            data-clerk-publishable-key="pk_test_YnJpZ2h0LW1vcmF5LTIuY2xlcmsuYWNjb3VudHMuZGV2JA"
+            src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+            type="text/javascript"
+        ></script>
 
-    <!-- Clerk Auth -->
-    <script async crossorigin="anonymous"
-        data-clerk-publishable-key="pk_test_YnJpZ2h0LW1vcmF5LTIuY2xlcmsuYWNjb3VudHMuZGV2JA"
-        src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
-        type="text/javascript"></script>
+        <script
+            defer
+            src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+        ></script>
+        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <!-- jsPDF + autoTable for PDF export -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="/css/style.css" />
 
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet" />
-    <link rel="stylesheet" href="/css/style.css">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#ff3b3b",
-                        "accent-red": "#ff4d4d",
-                        "dark-red": "#7a0000",
-                        "deep-bg": "#050505",
-                        "card-bg": "#0d0d0d",
-                        "border-color": "#1f1f1f",
-                    },
-                    fontFamily: {
-                        "display": ["Inter", "sans-serif"]
+        <script id="tailwind-config">
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: "#ff3b3b",
+                            "accent-red": "#ff4d4d",
+                            "dark-red": "#7a0000",
+                            "deep-bg": "#050505",
+                            "card-bg": "#0d0d0d",
+                            "border-color": "#1f1f1f",
+                        },
+                        fontFamily: {
+                            display: ["Inter", "sans-serif"],
+                        },
                     },
                 },
-            },
-        }
-    </script>
-</head>
+            };
+        </script>
+    </head>
 
-<body class="dark bg-deep-bg text-white font-display min-h-screen flex flex-col" x-data="profileData()"
-    x-init="initData()">
+    <body
+        class="dark bg-deep-bg text-white font-display min-h-screen flex flex-col"
+        x-data="profileData()"
+        x-init="initData()"
+    >
+        <div id="nprogress-bar"></div>
 
-    <!-- Global Sign Out Button -->
-    <button onclick="Clerk.signOut().then(() => window.location.href='/sign-in')"
-        class="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-[100] bg-primary/20 backdrop-blur border border-primary/50 hover:bg-primary text-primary hover:text-white transition-all p-3 rounded-full shadow-[0_4px_20px_rgba(255,59,48,0.3)] flex items-center justify-center group"
-        title="Sign Out">
-        <span class="material-symbols-outlined text-[24px]">logout</span>
-    </button>
-
-
-    <!-- Header Navigation -->
-    <header
-        class="hidden md:flex items-center justify-between border-b border-border-color bg-deep-bg px-4 sm:px-10 py-4 sticky top-0 z-50">
-        <div class="flex items-center gap-4 sm:gap-10">
-            <div class="flex items-center gap-3 text-primary">
-                <span class="material-symbols-outlined text-3xl font-black">analytics</span>
-                <h2
-                    class="text-white text-lg sm:text-xl font-black uppercase tracking-[0.2em] leading-tight hidden sm:block">
-                    Attendify</h2>
-            </div>
-        </div>
-
-        <div class="flex flex-1 justify-end gap-4 sm:gap-6 sm:gap-10 items-center">
-            <nav class="hidden md:flex items-center gap-8">
-                <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
-                    href="/">Dashboard</a>
-                <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
-                    href="/calendar">Calendar</a>
-                <a class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
-                    href="/calculator">Calculator</a>
-                <a class="text-primary border-b border-primary py-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest"
-                    href="/profile">Profile</a>
-            </nav>
-            <div class="hidden">
-                <div id="user-button"></div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Mobile Bottom Nav -->
-    <nav
-        class="md:hidden fixed bottom-0 left-0 right-0 bg-deep-bg border-t border-border-color z-50 flex justify-around items-center pt-2 pb-4 px-2 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]">
-        <a href="/" class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
-            <span class="material-symbols-outlined text-[24px]">home</span>
-            <span class="text-[9px] font-black uppercase tracking-widest">Home</span>
-        </a>
-        <a href="/calendar"
-            class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors">
-            <span class="material-symbols-outlined text-[24px]">calendar_month</span>
-            <span class="text-[9px] font-black uppercase tracking-widest">Calendar</span>
-        </a>
-        <a href="/profile" class="flex flex-col items-center gap-1 p-2 text-primary">
-            <span class="material-symbols-outlined text-[24px]">person</span>
-            <span class="text-[9px] font-black uppercase tracking-widest">Profile</span>
-        </a>
-    </nav>
-
-    <main class="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-10 pt-4 sm:pt-10 pb-24 md:pb-10" id="main-content"
-        x-show="!loading" style="opacity: 0; transition: opacity 0.5s ease;">
-
-        <div class="flex flex-col gap-2 mb-6 sm:mb-10">
-            <h1 class="text-white text-3xl sm:text-5xl font-black leading-none tracking-tighter uppercase">Profile</h1>
-        </div>
-
-        <div class="rounded bg-card-bg border border-border-color p-8 neo-shadow">
-
-            <!-- Flash message -->
-            <div x-show="successMessage" x-transition.opacity
-                class="mb-6 p-4 bg-green-500/10 border border-green-500/30 text-green-500 text-[10px] font-black uppercase tracking-widest rounded flex items-center justify-center gap-2">
-                <span class="material-symbols-outlined text-sm">check_circle</span>
-                <span x-text="successMessage"></span>
-            </div>
-
-            <form @submit.prevent="saveProfile">
-                <div class="space-y-6">
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pb-6 border-b border-border-color">
-                        <div>
-                            <label
-                                class="block text-[10px] font-black text-neutral-500 mb-2 uppercase tracking-widest">Student
-                                Name</label>
-                            <input x-model="profile.name" type="text"
-                                class="w-full rounded bg-deep-bg text-white border border-border-color focus:ring-1 focus:ring-primary focus:border-primary px-4 py-3 text-sm"
-                                placeholder="Your Full Name">
-                        </div>
-                        <div>
-                            <label
-                                class="block text-[10px] font-black text-neutral-500 mb-2 uppercase tracking-widest">Institution
-                                / College</label>
-                            <input x-model="profile.college" type="text"
-                                class="w-full rounded bg-deep-bg text-white border border-border-color focus:ring-1 focus:ring-primary focus:border-primary px-4 py-3 text-sm"
-                                placeholder="University Name">
-                        </div>
-                        <div>
-                            <label
-                                class="block text-[10px] font-black text-neutral-500 mb-2 uppercase tracking-widest">Current
-                                Semester</label>
-                            <input x-model="profile.semester" type="text"
-                                class="w-full rounded bg-deep-bg text-white border border-border-color focus:ring-1 focus:ring-primary focus:border-primary px-4 py-3 text-sm"
-                                placeholder="e.g., 6th Sem">
-                        </div>
-                    </div>
-
-                    <div class="pt-2">
-                        <label class="block text-[10px] font-black text-primary mb-2 uppercase tracking-widest">Global
-                            Attendance Requirement %</label>
-                        <p class="text-[10px] text-neutral-500 font-bold mb-4">This percentage sets the default target
-                            requirement for all predictive analytics and newly enrolled subjects.</p>
-                        <div class="relative max-w-xs">
-                            <input x-model.number="profile.attendance_requirement_percentage" type="number" step="0.1"
-                                min="0" max="100"
-                                class="w-full rounded bg-deep-bg text-white border border-border-color focus:ring-1 focus:ring-primary focus:border-primary px-8 py-4 text-2xl font-black tabular-nums text-center"
-                                placeholder="75.0">
-                            <span
-                                class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 font-black text-2xl">%</span>
-                        </div>
-                    </div>
+        <!-- Header Navigation -->
+        <header
+            class="hidden md:flex items-center justify-between border-b border-border-color bg-deep-bg px-4 sm:px-10 py-4 sticky top-0 z-50"
+        >
+            <div class="flex items-center gap-4 sm:gap-10">
+                <div class="flex items-center gap-3 text-primary">
+                    <span class="material-symbols-outlined text-3xl font-black"
+                        >analytics</span
+                    >
+                    <h2
+                        class="text-white text-lg sm:text-xl font-black uppercase tracking-[0.2em] leading-tight hidden sm:block"
+                    >
+                        Attendify
+                    </h2>
                 </div>
+            </div>
+            <div
+                class="flex flex-1 justify-end gap-4 sm:gap-6 sm:gap-10 items-center"
+            >
+                <nav class="hidden md:flex items-center gap-8">
+                    <a
+                        class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
+                        href="/"
+                        onclick="startNav()"
+                        >Dashboard</a
+                    >
+                    <a
+                        class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
+                        href="/calendar"
+                        onclick="startNav()"
+                        >Calendar</a
+                    >
+                    <a
+                        class="text-neutral-500 hover:text-white transition-all text-[10px] sm:text-xs font-bold uppercase tracking-widest"
+                        href="/calculator"
+                        onclick="startNav()"
+                        >Calculator</a
+                    >
+                    <a
+                        class="text-primary border-b border-primary py-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest"
+                        href="/profile"
+                        >Profile</a
+                    >
+                </nav>
+                <div class="hidden">
+                    <div id="user-button"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Mobile Bottom Nav -->
+        <nav
+            class="md:hidden fixed bottom-0 left-0 right-0 bg-deep-bg border-t border-border-color z-50 flex justify-around items-center pt-2 pb-4 px-2 shadow-[0_-10px_40px_rgba(0,0,0,0.8)]"
+        >
+            <a
+                href="/"
+                onclick="startNav()"
+                class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors"
+            >
+                <span class="material-symbols-outlined text-[24px]">home</span>
+                <span class="text-[9px] font-black uppercase tracking-widest"
+                    >Home</span
+                >
+            </a>
+            <a
+                href="/calendar"
+                onclick="startNav()"
+                class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors"
+            >
+                <span class="material-symbols-outlined text-[24px]"
+                    >calendar_month</span
+                >
+                <span class="text-[9px] font-black uppercase tracking-widest"
+                    >Calendar</span
+                >
+            </a>
+            <a
+                href="/calculator"
+                onclick="startNav()"
+                class="flex flex-col items-center gap-1 p-2 text-neutral-500 hover:text-white transition-colors"
+            >
+                <span class="material-symbols-outlined text-[24px]"
+                    >calculate</span
+                >
+                <span class="text-[9px] font-black uppercase tracking-widest"
+                    >Calc</span
+                >
+            </a>
+            <a
+                href="/profile"
+                class="flex flex-col items-center gap-1 p-2 text-primary"
+            >
+                <span class="material-symbols-outlined text-[24px]"
+                    >person</span
+                >
+                <span class="text-[9px] font-black uppercase tracking-widest"
+                    >Profile</span
+                >
+            </a>
+        </nav>
+
+        <main
+            class="flex-1 mx-auto w-full max-w-3xl px-4 sm:px-10 pt-4 sm:pt-10 pb-24 md:pb-10"
+            id="main-content"
+            x-show="!loading"
+            style="opacity: 0; transition: opacity 0.5s ease"
+        >
+            <div class="flex flex-col gap-2 mb-6 sm:mb-10">
+                <h1
+                    class="text-white text-3xl sm:text-5xl font-black leading-none tracking-tighter uppercase"
+                >
+                    Profile
+                </h1>
+            </div>
+
+            <!-- Profile Form Card -->
+            <div
+                class="rounded bg-card-bg border border-border-color p-8 neo-shadow"
+            >
+                <!-- Flash message -->
+                <div
+                    x-show="successMessage"
+                    x-transition.opacity
+                    class="mb-6 p-4 bg-green-500/10 border border-green-500/30 text-green-500 text-[10px] font-black uppercase tracking-widest rounded flex items-center justify-center gap-2"
+                >
+                    <span class="material-symbols-outlined text-sm"
+                        >check_circle</span
+                    >
+                    <span x-text="successMessage"></span>
+                </div>
+
+                <form @submit.prevent="saveProfile">
+                    <div class="space-y-6">
+                        <div
+                            class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pb-6 border-b border-border-color"
+                        >
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-neutral-500 mb-2 uppercase tracking-widest"
+                                    >Student Name</label
+                                >
+                                <input
+                                    x-model="profile.name"
+                                    type="text"
+                                    class="w-full rounded bg-deep-bg text-white border border-border-color focus:ring-1 focus:ring-primary focus:border-primary px-4 py-3 text-sm"
+                                    placeholder="Your Full Name"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-neutral-500 mb-2 uppercase tracking-widest"
+                                    >Institution / College</label
+                                >
+                                <input
+                                    x-model="profile.college"
+                                    type="text"
+                                    class="w-full rounded bg-deep-bg text-white border border-border-color focus:ring-1 focus:ring-primary focus:border-primary px-4 py-3 text-sm"
+                                    placeholder="University Name"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-black text-neutral-500 mb-2 uppercase tracking-widest"
+                                    >Current Semester</label
+                                >
+                                <input
+                                    x-model="profile.semester"
+                                    type="text"
+                                    class="w-full rounded bg-deep-bg text-white border border-border-color focus:ring-1 focus:ring-primary focus:border-primary px-4 py-3 text-sm"
+                                    placeholder="e.g., 6th Sem"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <label
+                                class="block text-[10px] font-black text-primary mb-2 uppercase tracking-widest"
+                                >Global Attendance Requirement %</label
+                            >
+                            <p
+                                class="text-[10px] text-neutral-500 font-bold mb-4"
+                            >
+                                This percentage sets the default target
+                                requirement for all predictive analytics and
+                                newly enrolled subjects.
+                            </p>
+                            <div class="relative max-w-xs">
+                                <input
+                                    x-model.number="profile.attendance_requirement_percentage"
+                                    type="number"
+                                    step="0.1"
+                                    min="0"
+                                    max="100"
+                                    class="w-full rounded bg-deep-bg text-white border border-border-color focus:ring-1 focus:ring-primary focus:border-primary px-8 py-4 text-2xl font-black tabular-nums text-center"
+                                    placeholder="75.0"
+                                />
+                                <span
+                                    class="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 font-black text-2xl"
+                                    >%</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="mt-10 pt-6 border-t border-border-color flex flex-col sm:flex-row justify-between items-center gap-4"
+                    >
+                        <!-- Save button — consistent red primary styling -->
+                        <button
+                            type="submit"
+                            class="w-full sm:w-auto px-8 py-3 bg-primary text-white text-xs font-black rounded hover:brightness-110 uppercase tracking-widest shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+                        >
+                            <span class="material-symbols-outlined text-[16px]"
+                                >save</span
+                            >
+                            Update Configuration
+                        </button>
+                        <!-- Sign out — inline, no floating FAB -->
+                        <button
+                            type="button"
+                            onclick="
+                                Clerk.signOut().then(
+                                    () => (window.location.href = '/sign-in'),
+                                )
+                            "
+                            class="w-full sm:w-auto px-8 py-3 bg-white/5 border border-border-color text-neutral-400 text-xs font-black rounded hover:bg-primary/10 hover:text-primary hover:border-primary/30 uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                        >
+                            <span class="material-symbols-outlined text-[16px]"
+                                >logout</span
+                            >
+                            Sign Out
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Quick Links for Mobile (hidden on desktop) -->
+            <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
+                <a
+                    href="/calculator"
+                    onclick="startNav()"
+                    class="rounded bg-card-bg border border-border-color p-6 neo-shadow flex items-center justify-between gap-4 hover:border-primary/50 transition-all group"
+                >
+                    <div>
+                        <h3
+                            class="text-sm font-black text-white uppercase tracking-[0.2em] mb-1"
+                        >
+                            Scenario Simulator
+                        </h3>
+                        <p class="text-xs text-neutral-400">
+                            What-if predictions
+                        </p>
+                    </div>
+                    <span
+                        class="material-symbols-outlined text-[32px] text-neutral-600 group-hover:text-primary transition-all"
+                        >calculate</span
+                    >
+                </a>
+            </div>
+
+            <!-- ═══ COLLEGE LOCATION ═══ -->
+            <div
+                class="mt-8 rounded bg-card-bg border border-border-color p-8 neo-shadow"
+            >
+                <div class="flex items-center justify-between mb-6">
+                    <h3
+                        class="text-sm font-black text-white uppercase tracking-[0.2em] border-l-2 border-primary pl-3"
+                    >
+                        📍 College Location
+                    </h3>
+                    <span
+                        class="text-[10px] text-neutral-500 uppercase tracking-widest"
+                        >Geofencing</span
+                    >
+                </div>
+                <p class="text-xs text-neutral-400 mb-5 leading-relaxed">
+                    Set your college location so Attendify can automatically
+                    mark you as <strong class="text-white">Present</strong> when
+                    you arrive during a scheduled class.
+                </p>
 
                 <div
-                    class="mt-10 pt-6 border-t border-border-color flex flex-col sm:flex-row justify-between items-center gap-4">
-
-                    <button type="submit"
-                        class="w-full sm:w-auto px-8 py-3 bg-white text-primary text-xs font-black rounded hover:bg-neutral-200 uppercase tracking-widest shadow-lg shadow-white/10 transition-all flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-[16px]">save</span> UPDATE CONFIGURATION
-                    </button>
-
-                </div>
-            </form>
-
-        </div>
-
-        <!-- Quick Links for Mobile (hidden on desktop) -->
-        <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
-
-            <a href="/calculator"
-                class="rounded bg-card-bg border border-border-color p-6 neo-shadow flex items-center justify-between gap-4 hover:border-primary/50 transition-all group">
-                <div>
-                    <h3 class="text-sm font-black text-white uppercase tracking-[0.2em] mb-1">Scenario Simulator</h3>
-                    <p class="text-xs text-neutral-400">What-if predictions</p>
-                </div>
-                <span
-                    class="material-symbols-outlined text-[32px] text-neutral-600 group-hover:text-primary transition-all">calculate</span>
-            </a>
-        </div>
-
-        <!-- ═══ COLLEGE LOCATION ═══ -->
-        <div class="mt-8 rounded bg-card-bg border border-border-color p-8 neo-shadow">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-sm font-black text-white uppercase tracking-[0.2em] border-l-2 border-primary pl-3">
-                    📍 College Location</h3>
-                <span class="text-[10px] text-neutral-500 uppercase tracking-widest">Geofencing</span>
-            </div>
-            <p class="text-xs text-neutral-400 mb-5 leading-relaxed">Set your college location so Attendify can
-                automatically mark you as <strong class="text-white">Present</strong> when you arrive during a
-                scheduled class.</p>
-
-            <div x-show="geoLocation.lat"
-                class="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded flex items-center gap-3">
-                <span class="material-symbols-outlined text-green-500 text-[20px]">location_on</span>
-                <div>
-                    <p class="text-green-500 text-xs font-black uppercase tracking-widest">Location Saved</p>
-                    <p class="text-neutral-400 text-[10px] mt-0.5"
-                        x-text="`${geoLocation.lat?.toFixed(5)}, ${geoLocation.lng?.toFixed(5)} — Radius: ${geoLocation.radius}m`">
-                    </p>
-                </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-4 items-end">
-                <div class="flex-1">
-                    <label
-                        class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">Detection
-                        Radius</label>
-                    <div class="flex items-center gap-3">
-                        <input type="range" min="50" max="500" step="25" x-model="geoLocation.radius"
-                            class="flex-1 accent-primary">
-                        <span class="text-white font-black text-sm w-14 text-right"
-                            x-text="geoLocation.radius + 'm'"></span>
+                    x-show="geoLocation.lat"
+                    class="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded flex items-center gap-3"
+                >
+                    <span
+                        class="material-symbols-outlined text-green-500 text-[20px]"
+                        >location_on</span
+                    >
+                    <div>
+                        <p
+                            class="text-green-500 text-xs font-black uppercase tracking-widest"
+                        >
+                            Location Saved
+                        </p>
+                        <p
+                            class="text-neutral-400 text-[10px] mt-0.5"
+                            x-text="`${geoLocation.lat?.toFixed(5)}, ${geoLocation.lng?.toFixed(5)} — Radius: ${geoLocation.radius}m`"
+                        ></p>
                     </div>
                 </div>
-                <button @click="detectLocation()"
-                    class="px-6 py-3 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-xs font-black rounded uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap">
-                    <span class="material-symbols-outlined text-[18px]">my_location</span>
-                    Use My Location
+
+                <div class="flex flex-col sm:flex-row gap-4 items-end">
+                    <div class="flex-1">
+                        <label
+                            class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2"
+                            >Detection Radius</label
+                        >
+                        <div class="flex items-center gap-3">
+                            <input
+                                type="range"
+                                min="50"
+                                max="500"
+                                step="25"
+                                x-model="geoLocation.radius"
+                                class="flex-1 accent-primary"
+                            />
+                            <span
+                                class="text-white font-black text-sm w-14 text-right"
+                                x-text="geoLocation.radius + 'm'"
+                            ></span>
+                        </div>
+                    </div>
+                    <!-- Detect button with loading state -->
+                    <button
+                        @click="detectLocation()"
+                        :disabled="detectingLocation"
+                        class="px-6 py-3 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-xs font-black rounded uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        <span
+                            class="material-symbols-outlined text-[18px]"
+                            :class="detectingLocation ? 'animate-spin' : ''"
+                            x-text="detectingLocation ? 'sync' : 'my_location'"
+                        ></span>
+                        <span
+                            x-text="detectingLocation ? 'Detecting...' : 'Use My Location'"
+                        ></span>
+                    </button>
+                    <!-- Save button always visible, disabled until location detected -->
+                    <button
+                        @click="saveLocation()"
+                        :disabled="!geoLocation.lat"
+                        class="px-6 py-3 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-500 text-xs font-black rounded uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <span class="material-symbols-outlined text-[18px]"
+                            >save</span
+                        >
+                        Save Location
+                    </button>
+                </div>
+            </div>
+
+            <!-- ═══ WEEKLY TIMETABLE ═══ -->
+            <div
+                class="mt-8 rounded bg-card-bg border border-border-color p-8 neo-shadow"
+            >
+                <div class="flex items-center justify-between mb-6">
+                    <h3
+                        class="text-sm font-black text-white uppercase tracking-[0.2em] border-l-2 border-primary pl-3"
+                    >
+                        🗓️ Weekly Timetable
+                    </h3>
+                    <span
+                        class="text-[10px] text-neutral-500 uppercase tracking-widest"
+                        >Auto-Attendance</span
+                    >
+                </div>
+                <p class="text-xs text-neutral-400 mb-6 leading-relaxed">
+                    Add your class schedule. The app will check your location at
+                    each class start time and auto-mark your attendance.
+                </p>
+
+                <!-- Add slot form -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div>
+                        <label
+                            class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2"
+                            >Subject</label
+                        >
+                        <select
+                            x-model="newSlot.subjectId"
+                            class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 uppercase tracking-wide focus:outline-none focus:border-primary/50"
+                        >
+                            <option value="">— Select —</option>
+                            <template x-for="s in subjects" :key="s.id">
+                                <option
+                                    :value="s.id"
+                                    x-text="s.subject_name"
+                                ></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2"
+                            >Day</label
+                        >
+                        <select
+                            x-model="newSlot.day"
+                            class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 uppercase tracking-wide focus:outline-none focus:border-primary/50"
+                        >
+                            <option value="">— Day —</option>
+                            <option value="monday">Monday</option>
+                            <option value="tuesday">Tuesday</option>
+                            <option value="wednesday">Wednesday</option>
+                            <option value="thursday">Thursday</option>
+                            <option value="friday">Friday</option>
+                            <option value="saturday">Saturday</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label
+                            class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2"
+                            >Start</label
+                        >
+                        <input
+                            type="time"
+                            x-model="newSlot.startTime"
+                            class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 focus:outline-none focus:border-primary/50"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2"
+                            >End</label
+                        >
+                        <input
+                            type="time"
+                            x-model="newSlot.endTime"
+                            class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 focus:outline-none focus:border-primary/50"
+                        />
+                    </div>
+                </div>
+                <button
+                    @click="addSlot()"
+                    class="w-full sm:w-auto px-6 py-3 bg-primary text-white text-xs font-black rounded uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2 justify-center mb-8 shadow-lg shadow-primary/20"
+                >
+                    <span class="material-symbols-outlined text-[18px]"
+                        >add</span
+                    >
+                    Add Class Slot
                 </button>
-                <button @click="saveLocation()" x-show="geoLocation.lat"
-                    class="px-6 py-3 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-500 text-xs font-black rounded uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap">
-                    <span class="material-symbols-outlined text-[18px]">save</span>
-                    Save
-                </button>
-            </div>
-        </div>
 
-        <!-- ═══ WEEKLY TIMETABLE ═══ -->
-        <div class="mt-8 rounded bg-card-bg border border-border-color p-8 neo-shadow">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-sm font-black text-white uppercase tracking-[0.2em] border-l-2 border-primary pl-3">
-                    🗓️ Weekly Timetable</h3>
-                <span class="text-[10px] text-neutral-500 uppercase tracking-widest">Auto-Attendance</span>
-            </div>
-            <p class="text-xs text-neutral-400 mb-6 leading-relaxed">Add your class schedule. The app will check your
-                location at each class start time and auto-mark your attendance.</p>
+                <!-- Timetable slots list -->
+                <template x-if="timetable.length === 0">
+                    <div
+                        class="text-center py-8 text-neutral-600 text-xs uppercase tracking-widest"
+                    >
+                        No class slots added yet
+                    </div>
+                </template>
 
-            <!-- Add slot form -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                <div>
-                    <label
-                        class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">Subject</label>
-                    <select x-model="newSlot.subjectId"
-                        class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 uppercase tracking-wide focus:outline-none focus:border-primary/50">
-                        <option value="">— Select —</option>
-                        <template x-for="s in subjects" :key="s.id">
-                            <option :value="s.id" x-text="s.subject_name"></option>
-                        </template>
-                    </select>
-                </div>
-                <div>
-                    <label
-                        class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">Day</label>
-                    <select x-model="newSlot.day"
-                        class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 uppercase tracking-wide focus:outline-none focus:border-primary/50">
-                        <option value="">— Day —</option>
-                        <option value="monday">Monday</option>
-                        <option value="tuesday">Tuesday</option>
-                        <option value="wednesday">Wednesday</option>
-                        <option value="thursday">Thursday</option>
-                        <option value="friday">Friday</option>
-                        <option value="saturday">Saturday</option>
-                    </select>
-                </div>
-                <div>
-                    <label
-                        class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">Start</label>
-                    <input type="time" x-model="newSlot.startTime"
-                        class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 focus:outline-none focus:border-primary/50">
-                </div>
-                <div>
-                    <label
-                        class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">End</label>
-                    <input type="time" x-model="newSlot.endTime"
-                        class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 focus:outline-none focus:border-primary/50">
-                </div>
-            </div>
-            <button @click="addSlot()"
-                class="w-full sm:w-auto px-6 py-3 bg-primary text-white text-xs font-black rounded uppercase tracking-widest hover:bg-primary/90 transition-all flex items-center gap-2 justify-center mb-8 shadow-lg shadow-primary/20">
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                Add Class Slot
-            </button>
-
-            <!-- Timetable slots list -->
-            <template x-if="timetable.length === 0">
-                <div class="text-center py-8 text-neutral-600 text-xs uppercase tracking-widest">
-                    No class slots added yet
-                </div>
-            </template>
-
-            <!-- Group by day -->
-            <template x-for="day in ['monday','tuesday','wednesday','thursday','friday','saturday']" :key="day">
-                <div x-show="timetable.filter(t => t.day === day).length > 0" class="mb-4">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-primary mb-2" x-text="day"></p>
-                    <div class="space-y-2">
-                        <template x-for="slot in timetable.filter(t => t.day === day)" :key="slot.id">
-                            <div
-                                class="flex items-center justify-between bg-deep-bg border border-border-color rounded px-4 py-3">
-                                <div class="flex items-center gap-3">
-                                    <span class="material-symbols-outlined text-[18px] text-neutral-600">school</span>
-                                    <div>
-                                        <p class="text-white text-xs font-black uppercase tracking-wider"
-                                            x-text="slot.subject_name"></p>
-                                        <p class="text-neutral-500 text-[10px] mt-0.5"
-                                            x-text="`${slot.startTime} – ${slot.endTime}`"></p>
+                <!-- Group by day -->
+                <template
+                    x-for="day in ['monday','tuesday','wednesday','thursday','friday','saturday']"
+                    :key="day"
+                >
+                    <div
+                        x-show="timetable.filter(t => t.day === day).length > 0"
+                        class="mb-4"
+                    >
+                        <p
+                            class="text-[10px] font-black uppercase tracking-widest text-primary mb-2"
+                            x-text="day"
+                        ></p>
+                        <div class="space-y-2">
+                            <template
+                                x-for="slot in timetable.filter(t => t.day === day)"
+                                :key="slot.id"
+                            >
+                                <div
+                                    class="flex items-center justify-between bg-deep-bg border border-border-color rounded px-4 py-3"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        <span
+                                            class="material-symbols-outlined text-[18px] text-neutral-600"
+                                            >school</span
+                                        >
+                                        <div>
+                                            <p
+                                                class="text-white text-xs font-black uppercase tracking-wider"
+                                                x-text="slot.subject_name"
+                                            ></p>
+                                            <p
+                                                class="text-neutral-500 text-[10px] mt-0.5"
+                                                x-text="`${slot.startTime} – ${slot.endTime}`"
+                                            ></p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <!-- Edit button -->
+                                        <button
+                                            @click="editingSlot = { id: slot.id, subjectId: slot.subjectId, day: slot.day, startTime: slot.startTime, endTime: slot.endTime }"
+                                            class="p-1.5 text-neutral-600 hover:text-white hover:bg-white/10 rounded transition-all"
+                                            title="Edit slot"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[18px]"
+                                                >edit</span
+                                            >
+                                        </button>
+                                        <!-- Delete button -->
+                                        <button
+                                            @click="deleteSlot(slot.id)"
+                                            class="p-1.5 text-neutral-600 hover:text-primary hover:bg-primary/10 rounded transition-all"
+                                            title="Delete slot"
+                                        >
+                                            <span
+                                                class="material-symbols-outlined text-[18px]"
+                                                >delete</span
+                                            >
+                                        </button>
                                     </div>
                                 </div>
-                                <button @click="deleteSlot(slot.id)"
-                                    class="p-1.5 text-neutral-600 hover:text-primary hover:bg-primary/10 rounded transition-all">
-                                    <span class="material-symbols-outlined text-[18px]">delete</span>
-                                </button>
-                            </div>
-                        </template>
+                            </template>
+                        </div>
                     </div>
+                </template>
+            </div>
+
+            <!-- Data Management Section -->
+            <div
+                class="mt-8 rounded bg-card-bg border border-border-color p-8 neo-shadow"
+            >
+                <h3
+                    class="text-sm font-black text-white uppercase tracking-[0.2em] border-l-2 border-primary pl-3 mb-6"
+                >
+                    Backup & Restore
+                </h3>
+                <p class="text-xs text-neutral-400 mb-6 leading-relaxed">
+                    Download a complete JSON backup of your profile and
+                    attendance history. You can use this file to restore your
+                    data on another device seamlessly.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button
+                        @click="exportData()"
+                        class="flex-1 px-6 py-4 bg-white/5 hover:bg-white/10 border border-border-color text-white text-xs font-black rounded uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2"
+                    >
+                        <span
+                            class="material-symbols-outlined text-[24px] text-neutral-400"
+                            >download</span
+                        >
+                        Export Backup (JSON)
+                    </button>
+
+                    <label class="flex-1 cursor-pointer">
+                        <input
+                            type="file"
+                            accept=".json"
+                            class="hidden"
+                            @change="importData($event)"
+                        />
+                        <div
+                            class="h-full px-6 py-4 bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/50 text-white text-xs font-black rounded uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[24px] text-primary"
+                                >upload</span
+                            >
+                            Import Backup (JSON)
+                        </div>
+                    </label>
                 </div>
-            </template>
-        </div>
+            </div>
 
-        <!-- Data Management Section -->
-        <div class="mt-8 rounded bg-card-bg border border-border-color p-8 neo-shadow">
-            <h3 class="text-sm font-black text-white uppercase tracking-[0.2em] border-l-2 border-primary pl-3 mb-6">
-                Backup & Restore</h3>
-            <p class="text-xs text-neutral-400 mb-6 leading-relaxed">Download a complete JSON backup of your profile and
-                attendance history. You can use this file to restore your data on another device seamlessly.</p>
+            <!-- Printable Reports Section -->
+            <div
+                class="mt-8 rounded bg-card-bg border border-border-color p-8 neo-shadow"
+            >
+                <h3
+                    class="text-sm font-black text-white uppercase tracking-[0.2em] border-l-2 border-primary pl-3 mb-6"
+                >
+                    Export Reports
+                </h3>
+                <p class="text-xs text-neutral-400 mb-6 leading-relaxed">
+                    Generate visual PDF summaries or raw CSV data of your
+                    current attendance standing for external use.
+                </p>
 
-            <div class="flex flex-col sm:flex-row gap-4">
-                <button @click="exportData()"
-                    class="flex-1 px-6 py-4 bg-white/5 hover:bg-white/10 border border-border-color text-white text-xs font-black rounded uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-[24px] text-neutral-400">download</span>
-                    Export Backup (JSON)
-                </button>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button
+                        @click="exportPDF()"
+                        class="flex-1 px-6 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-xs font-black rounded uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2"
+                    >
+                        <span class="material-symbols-outlined text-[24px]"
+                            >picture_as_pdf</span
+                        >
+                        Generate PDF Report
+                    </button>
+                    <button
+                        @click="exportCSV()"
+                        class="flex-1 px-6 py-4 bg-white/5 hover:bg-white/10 border border-border-color text-white text-xs font-black rounded uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2"
+                    >
+                        <span
+                            class="material-symbols-outlined text-[24px] text-neutral-400"
+                            >table_view</span
+                        >
+                        Download CSV
+                    </button>
+                </div>
+            </div>
+        </main>
 
-                <label class="flex-1 cursor-pointer">
-                    <input type="file" accept=".json" class="hidden" @change="importData($event)">
-                    <div
-                        class="h-full px-6 py-4 bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/50 text-white text-xs font-black rounded uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-[24px] text-primary">upload</span>
-                        Import Backup (JSON)
+        <!-- ═══ EDIT TIMETABLE SLOT MODAL ═══ -->
+        <div
+            x-show="editingSlot"
+            x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
+            <div
+                class="fixed inset-0 bg-black/80 backdrop-blur-sm"
+                @click="editingSlot = null"
+            ></div>
+            <div
+                class="bg-card-bg border border-border-color border-t-2 border-t-primary rounded-xl neo-shadow w-full max-w-md z-10 p-6"
+            >
+                <div class="flex justify-between items-center mb-6">
+                    <h3
+                        class="text-sm font-black uppercase tracking-widest text-white"
+                    >
+                        Edit Slot
+                    </h3>
+                    <button
+                        @click="editingSlot = null"
+                        class="text-neutral-500 hover:text-white transition-colors"
+                    >
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <template x-if="editingSlot">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label
+                                class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2"
+                                >Subject</label
+                            >
+                            <select
+                                x-model="editingSlot.subjectId"
+                                class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 uppercase tracking-wide focus:outline-none focus:border-primary/50"
+                            >
+                                <template x-for="s in subjects" :key="s.id">
+                                    <option
+                                        :value="s.id"
+                                        x-text="s.subject_name"
+                                    ></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label
+                                class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2"
+                                >Day</label
+                            >
+                            <select
+                                x-model="editingSlot.day"
+                                class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 uppercase tracking-wide focus:outline-none focus:border-primary/50"
+                            >
+                                <option value="monday">Monday</option>
+                                <option value="tuesday">Tuesday</option>
+                                <option value="wednesday">Wednesday</option>
+                                <option value="thursday">Thursday</option>
+                                <option value="friday">Friday</option>
+                                <option value="saturday">Saturday</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2"
+                                >Start</label
+                            >
+                            <input
+                                type="time"
+                                x-model="editingSlot.startTime"
+                                class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 focus:outline-none focus:border-primary/50"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2"
+                                >End</label
+                            >
+                            <input
+                                type="time"
+                                x-model="editingSlot.endTime"
+                                class="w-full bg-deep-bg border border-border-color text-white text-xs font-bold rounded px-3 py-2.5 focus:outline-none focus:border-primary/50"
+                            />
+                        </div>
+                        <div class="col-span-2 flex gap-3 mt-2">
+                            <button
+                                @click="saveEditSlot()"
+                                class="flex-1 px-6 py-3 bg-primary text-white text-xs font-black rounded uppercase tracking-widest hover:brightness-110 transition-all shadow-lg shadow-primary/20"
+                            >
+                                Save Changes
+                            </button>
+                            <button
+                                @click="editingSlot = null"
+                                class="px-6 py-3 bg-white/5 border border-border-color text-neutral-400 text-xs font-bold rounded hover:bg-white/10 uppercase tracking-widest transition-all"
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
-                </label>
+                </template>
             </div>
         </div>
 
-        <!-- Printable Reports Section -->
-        <div class="mt-8 rounded bg-card-bg border border-border-color p-8 neo-shadow">
-            <h3 class="text-sm font-black text-white uppercase tracking-[0.2em] border-l-2 border-primary pl-3 mb-6">
-                Export Reports</h3>
-            <p class="text-xs text-neutral-400 mb-6 leading-relaxed">Generate visual PDF summaries or raw CSV data of
-                your current attendance standing for external use.</p>
+        <script src="/js/main.js"></script>
+        <script>
+            function startNav() {
+                const bar = document.getElementById("nprogress-bar");
+                bar.style.opacity = "1";
+                bar.style.width = "60%";
+            }
 
-            <div class="flex flex-col sm:flex-row gap-4">
-                <button @click="exportPDF()"
-                    class="flex-1 px-6 py-4 bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary text-xs font-black rounded uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-[24px]">picture_as_pdf</span>
-                    Generate PDF Report
-                </button>
-                <button @click="exportCSV()"
-                    class="flex-1 px-6 py-4 bg-white/5 hover:bg-white/10 border border-border-color text-white text-xs font-black rounded uppercase tracking-widest transition-all flex flex-col items-center justify-center gap-2">
-                    <span class="material-symbols-outlined text-[24px] text-neutral-400">table_view</span>
-                    Download CSV
-                </button>
-            </div>
-        </div>
+            document.addEventListener("alpine:init", () => {
+                Alpine.data("profileData", () => ({
+                    loading: true,
+                    detectingLocation: false,
+                    editingSlot: null,
 
-    </main>
+                    profile: {
+                        name: "",
+                        college: "",
+                        semester: "",
+                        attendance_requirement_percentage: 75.0,
+                    },
+                    subjects: [],
+                    successMessage: "",
 
-    <script src="/js/main.js"></script>
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('profileData', () => ({
-                loading: true,
+                    timetable: [],
+                    geoLocation: { lat: null, lng: null, radius: 150 },
+                    newSlot: {
+                        subjectId: "",
+                        day: "",
+                        startTime: "",
+                        endTime: "",
+                    },
 
-                profile: { name: '', college: '', semester: '', attendance_requirement_percentage: 75.0 },
-                subjects: [],
-                successMessage: '',
-
-                timetable: [],
-                geoLocation: { lat: null, lng: null, radius: 150 },
-                newSlot: { subjectId: '', day: '', startTime: '', endTime: '' },
-
-                async initData() {
-                    window.addEventListener('load', async () => {
-                        await Clerk.load();
-                        const userButtonDiv = document.getElementById('user-button');
-                        if (typeof Clerk === "undefined") { setTimeout(() => this.initData(), 100); return; }
-                        if (Clerk.user) {
-                            Clerk.mountUserButton(userButtonDiv);
-                            document.getElementById('main-content').style.opacity = '1';
-                            await this.fetchProfile();
-                        } else {
-                            window.location.href = '/sign-in';
-                        }
-                    });
-                },
-
-                async fetchProfile() {
-                    try {
-                        const [profRes, dashRes, ttRes, locRes] = await Promise.all([
-                            fetch('/api/profile'),
-                            fetch('/api/dashboard'),
-                            fetch('/api/timetable'),
-                            fetch('/api/settings/location')
-                        ]);
-                        if (profRes.ok) this.profile = await profRes.json();
-                        if (dashRes.ok) {
-                            const dash = await dashRes.json();
-                            this.subjects = dash.subjects || [];
-                        }
-                        if (ttRes.ok) this.timetable = await ttRes.json();
-                        if (locRes.ok) {
-                            const loc = await locRes.json();
-                            if (loc && loc.lat) this.geoLocation = loc;
-                        }
-                    } catch (err) {
-                        console.error(err);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-
-                detectLocation() {
-                    if (!navigator.geolocation) return window.showToast('Geolocation not supported', 'error');
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            this.geoLocation.lat = pos.coords.latitude;
-                            this.geoLocation.lng = pos.coords.longitude;
-                            window.showToast('Location detected! Click Save to confirm.', 'success');
-                        },
-                        () => window.showToast('Could not get location. Please allow location access.', 'error'),
-                        { enableHighAccuracy: true }
-                    );
-                },
-
-                async saveLocation() {
-                    try {
-                        const res = await fetch('/api/settings/location', {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(this.geoLocation)
-                        });
-                        if (res.ok) window.showToast('College location saved!', 'success');
-                        else window.showToast('Failed to save location', 'error');
-                    } catch (e) {
-                        window.showToast('Communication error', 'error');
-                    }
-                },
-
-                async addSlot() {
-                    const { subjectId, day, startTime, endTime } = this.newSlot;
-                    if (!subjectId || !day || !startTime || !endTime) {
-                        return window.showToast('Fill in all fields before adding a slot', 'error');
-                    }
-                    if (startTime >= endTime) {
-                        return window.showToast('End time must be after start time', 'error');
-                    }
-                    try {
-                        const res = await fetch('/api/timetable', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ subjectId, day, startTime, endTime })
-                        });
-                        if (res.ok) {
-                            const slot = await res.json();
-                            // Attach subject name locally
-                            const subj = this.subjects.find(s => s.id === subjectId);
-                            slot.subject_name = subj ? subj.subject_name : 'Unknown';
-                            this.timetable.push(slot);
-                            this.newSlot = { subjectId: '', day: '', startTime: '', endTime: '' };
-                            window.showToast('Class slot added!', 'success');
-                        } else {
-                            window.showToast('Failed to add slot', 'error');
-                        }
-                    } catch (e) {
-                        window.showToast('Communication error', 'error');
-                    }
-                },
-
-                async deleteSlot(slotId) {
-                    try {
-                        const res = await fetch(`/api/timetable/${slotId}`, { method: 'DELETE' });
-                        if (res.ok) {
-                            this.timetable = this.timetable.filter(t => t.id !== slotId);
-                            window.showToast('Slot removed', 'success');
-                        } else {
-                            window.showToast('Failed to delete slot', 'error');
-                        }
-                    } catch (e) {
-                        window.showToast('Communication error', 'error');
-                    }
-                },
-
-                async saveProfile() {
-                    try {
-                        const res = await fetch('/api/profile', {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(this.profile)
-                        });
-                        if (res.ok) {
-                            window.showToast("Configuration state saved successfully", "success");
-                        } else {
-                            window.showToast("Failed to save profile", "error");
-                        }
-                    } catch (e) {
-                        console.error('Error saving', e);
-                        window.showToast('Communication error', 'error');
-                    }
-                },
-
-                exportCSV() {
-                    if (!this.subjects || this.subjects.length === 0) return window.showToast("No data to export", "error");
-
-                    let csvContent = "data:text/csv;charset=utf-8,";
-                    csvContent += "Subject Name,Faculty,Total Classes,Attended Classes,Current Percentage,Required Percentage\n";
-
-                    this.subjects.forEach(row => {
-                        let name = `"${row.subject_name.replace(/"/g, '""')}"`;
-                        let faculty = `"${(row.faculty_name || '').replace(/"/g, '""')}"`;
-                        csvContent += `${name},${faculty},${row.total_classes},${row.attended_classes},${row.current_percentage}%,${row.min_requirement_percentage}%\n`;
-                    });
-
-                    const encodedUri = encodeURI(csvContent);
-                    const link = document.createElement("a");
-                    link.setAttribute("href", encodedUri);
-                    link.setAttribute("download", `attendify_report_${new Date().toISOString().split('T')[0]}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    window.showToast("CSV Exported", "success");
-                },
-
-                exportPDF() {
-                    if (!this.subjects || this.subjects.length === 0) return window.showToast("No data to export", "error");
-
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF();
-
-                    doc.setFontSize(22);
-                    doc.setTextColor(255, 59, 59);
-                    doc.text("Attendify", 14, 20);
-
-                    doc.setFontSize(14);
-                    doc.setTextColor(50, 50, 50);
-                    doc.text("Student Attendance Report", 14, 30);
-
-                    doc.setFontSize(10);
-                    doc.text(`Name: ${this.profile.name || 'N/A'}`, 14, 40);
-                    doc.text(`College: ${this.profile.college || 'N/A'}`, 14, 45);
-                    doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 50);
-
-                    const head = [['Subject', 'Faculty', 'Attended', 'Total', 'Current %', 'Req %']];
-                    const body = this.subjects.map(s => [
-                        s.subject_name.substring(0, 25),
-                        (s.faculty_name || '-').substring(0, 20),
-                        s.attended_classes.toString(),
-                        s.total_classes.toString(),
-                        s.current_percentage + '%',
-                        s.min_requirement_percentage + '%'
-                    ]);
-
-                    doc.autoTable({
-                        startY: 60,
-                        head: head,
-                        body: body,
-                        theme: 'striped',
-                        headStyles: { fillColor: [255, 59, 59] },
-                        styles: { fontSize: 8 }
-                    });
-
-                    doc.save(`attendify_report_${new Date().toISOString().split('T')[0]}.pdf`);
-                    window.showToast("PDF Generated", "success");
-                },
-
-                async exportData() {
-                    try {
-                        const response = await fetch('/api/export');
-                        if (!response.ok) throw new Error("Export failed");
-
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.style.display = 'none';
-                        a.href = url;
-                        // Use the filename provided by backend or fallback
-                        const contentDisposition = response.headers.get('Content-Disposition');
-                        let fileName = 'attendify_backup.json';
-                        if (contentDisposition) {
-                            const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
-                            if (fileNameMatch.length === 2) fileName = fileNameMatch[1];
-                        }
-                        a.download = fileName;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        window.showToast("Backup exported successfully", "success");
-                    } catch (err) {
-                        console.error(err);
-                        window.showToast("Failed to export backup", "error");
-                    }
-                },
-
-                async importData(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-
-                    const reader = new FileReader();
-                    reader.onload = async (e) => {
-                        try {
-                            const json = JSON.parse(e.target.result);
-
-                            // Ask confirmation since it overwrites
-                            if (!confirm("Are you sure you want to restore this data? This will overwrite your current configuration and history on this device.")) {
-                                event.target.value = ''; // Reset file input
+                    async initData() {
+                        window.addEventListener("load", async () => {
+                            await Clerk.load();
+                            const userButtonDiv =
+                                document.getElementById("user-button");
+                            if (typeof Clerk === "undefined") {
+                                setTimeout(() => this.initData(), 100);
                                 return;
                             }
-
-                            const response = await fetch('/api/import', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(json)
-                            });
-
-                            if (response.ok) {
-                                window.showToast("Data restored successfully. Reloading...", "success");
-                                setTimeout(() => window.location.reload(), 1500);
+                            if (Clerk.user) {
+                                Clerk.mountUserButton(userButtonDiv);
+                                document.getElementById(
+                                    "main-content",
+                                ).style.opacity = "1";
+                                const bar =
+                                    document.getElementById("nprogress-bar");
+                                bar.style.opacity = "1";
+                                bar.style.width = "70%";
+                                await this.fetchProfile();
+                                bar.style.width = "100%";
+                                setTimeout(() => {
+                                    bar.style.opacity = "0";
+                                    bar.style.width = "0%";
+                                }, 400);
                             } else {
-                                const err = await response.json();
-                                window.showToast(err.error || "Failed to restore data", "error");
+                                window.location.href = "/sign-in";
+                            }
+                        });
+                    },
+
+                    async fetchProfile() {
+                        try {
+                            const [profRes, dashRes, ttRes, locRes] =
+                                await Promise.all([
+                                    fetch("/api/profile"),
+                                    fetch("/api/dashboard"),
+                                    fetch("/api/timetable"),
+                                    fetch("/api/settings/location"),
+                                ]);
+                            if (profRes.ok) this.profile = await profRes.json();
+                            if (dashRes.ok) {
+                                const dash = await dashRes.json();
+                                this.subjects = dash.subjects || [];
+                            }
+                            if (ttRes.ok) this.timetable = await ttRes.json();
+                            if (locRes.ok) {
+                                const loc = await locRes.json();
+                                if (loc && loc.lat) this.geoLocation = loc;
                             }
                         } catch (err) {
                             console.error(err);
-                            window.showToast("Invalid JSON file uploaded", "error");
+                        } finally {
+                            this.loading = false;
                         }
-                        event.target.value = ''; // Reset file input
-                    };
-                    reader.readAsText(file);
-                },
+                    },
 
-            }));
-        });
-    </script>
-    <!-- Toast container - fixed popup below any header -->
-    <div id="toast-container"
-        class="fixed top-20 right-4 z-[9999] flex flex-col gap-2 pointer-events-none w-72 max-w-[calc(100vw-2rem)]">
-    </div>
-    <script src="/js/geo.js"></script>
-</body>
+                    detectLocation() {
+                        if (!navigator.geolocation)
+                            return window.showToast(
+                                "Geolocation not supported",
+                                "error",
+                            );
+                        this.detectingLocation = true;
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                this.geoLocation.lat = pos.coords.latitude;
+                                this.geoLocation.lng = pos.coords.longitude;
+                                this.detectingLocation = false;
+                                window.showToast(
+                                    "Location detected! Click Save Location to confirm.",
+                                    "success",
+                                );
+                            },
+                            () => {
+                                this.detectingLocation = false;
+                                window.showToast(
+                                    "Could not get location. Please allow location access.",
+                                    "error",
+                                );
+                            },
+                            { enableHighAccuracy: true },
+                        );
+                    },
 
+                    async saveLocation() {
+                        try {
+                            const res = await fetch("/api/settings/location", {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(this.geoLocation),
+                            });
+                            if (res.ok)
+                                window.showToast(
+                                    "College location saved!",
+                                    "success",
+                                );
+                            else
+                                window.showToast(
+                                    "Failed to save location",
+                                    "error",
+                                );
+                        } catch (e) {
+                            window.showToast("Communication error", "error");
+                        }
+                    },
+
+                    async addSlot() {
+                        const { subjectId, day, startTime, endTime } =
+                            this.newSlot;
+                        if (!subjectId || !day || !startTime || !endTime) {
+                            return window.showToast(
+                                "Fill in all fields before adding a slot",
+                                "error",
+                            );
+                        }
+                        if (startTime >= endTime) {
+                            return window.showToast(
+                                "End time must be after start time",
+                                "error",
+                            );
+                        }
+                        try {
+                            const res = await fetch("/api/timetable", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    subjectId,
+                                    day,
+                                    startTime,
+                                    endTime,
+                                }),
+                            });
+                            if (res.ok) {
+                                const slot = await res.json();
+                                const subj = this.subjects.find(
+                                    (s) => s.id === subjectId,
+                                );
+                                slot.subject_name = subj
+                                    ? subj.subject_name
+                                    : "Unknown";
+                                this.timetable.push(slot);
+                                this.newSlot = {
+                                    subjectId: "",
+                                    day: "",
+                                    startTime: "",
+                                    endTime: "",
+                                };
+                                window.showToast(
+                                    "Class slot added!",
+                                    "success",
+                                );
+                            } else {
+                                window.showToast("Failed to add slot", "error");
+                            }
+                        } catch (e) {
+                            window.showToast("Communication error", "error");
+                        }
+                    },
+
+                    async deleteSlot(slotId) {
+                        if (!confirm("Remove this class slot?")) return;
+                        try {
+                            const res = await fetch(
+                                `/api/timetable/${slotId}`,
+                                { method: "DELETE" },
+                            );
+                            if (res.ok) {
+                                this.timetable = this.timetable.filter(
+                                    (t) => t.id !== slotId,
+                                );
+                                window.showToast("Slot removed", "success");
+                            } else {
+                                window.showToast(
+                                    "Failed to delete slot",
+                                    "error",
+                                );
+                            }
+                        } catch (e) {
+                            window.showToast("Communication error", "error");
+                        }
+                    },
+
+                    async saveEditSlot() {
+                        const { id, subjectId, day, startTime, endTime } =
+                            this.editingSlot;
+                        if (!subjectId || !day || !startTime || !endTime) {
+                            return window.showToast(
+                                "Fill in all fields",
+                                "error",
+                            );
+                        }
+                        if (startTime >= endTime) {
+                            return window.showToast(
+                                "End time must be after start time",
+                                "error",
+                            );
+                        }
+                        try {
+                            await fetch(`/api/timetable/${id}`, {
+                                method: "DELETE",
+                            });
+                            const res = await fetch("/api/timetable", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    subjectId,
+                                    day,
+                                    startTime,
+                                    endTime,
+                                }),
+                            });
+                            if (res.ok) {
+                                await this.fetchProfile();
+                                this.editingSlot = null;
+                                window.showToast("Slot updated!", "success");
+                            } else {
+                                window.showToast(
+                                    "Failed to update slot",
+                                    "error",
+                                );
+                            }
+                        } catch (e) {
+                            window.showToast("Communication error", "error");
+                        }
+                    },
+
+                    async saveProfile() {
+                        try {
+                            const res = await fetch("/api/profile", {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(this.profile),
+                            });
+                            if (res.ok) {
+                                window.showToast(
+                                    "Configuration saved successfully",
+                                    "success",
+                                );
+                            } else {
+                                window.showToast(
+                                    "Failed to save profile",
+                                    "error",
+                                );
+                            }
+                        } catch (e) {
+                            console.error("Error saving", e);
+                            window.showToast("Communication error", "error");
+                        }
+                    },
+
+                    exportCSV() {
+                        if (!this.subjects || this.subjects.length === 0)
+                            return window.showToast(
+                                "No data to export",
+                                "error",
+                            );
+                        let csvContent = "data:text/csv;charset=utf-8,";
+                        csvContent +=
+                            "Subject Name,Faculty,Total Classes,Attended Classes,Current Percentage,Required Percentage\n";
+                        this.subjects.forEach((row) => {
+                            let name = `"${row.subject_name.replace(/"/g, '""')}"`;
+                            let faculty = `"${(row.faculty_name || "").replace(/"/g, '""')}"`;
+                            csvContent += `${name},${faculty},${row.total_classes},${row.attended_classes},${row.current_percentage}%,${row.min_requirement_percentage}%\n`;
+                        });
+                        const encodedUri = encodeURI(csvContent);
+                        const link = document.createElement("a");
+                        link.setAttribute("href", encodedUri);
+                        link.setAttribute(
+                            "download",
+                            `attendify_report_${new Date().toISOString().split("T")[0]}.csv`,
+                        );
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        window.showToast("CSV Exported", "success");
+                    },
+
+                    exportPDF() {
+                        if (!this.subjects || this.subjects.length === 0)
+                            return window.showToast(
+                                "No data to export",
+                                "error",
+                            );
+                        if (!window.jspdf)
+                            return window.showToast(
+                                "PDF library not loaded yet, try again in a moment",
+                                "error",
+                            );
+                        const { jsPDF } = window.jspdf;
+                        const doc = new jsPDF();
+                        doc.setFontSize(22);
+                        doc.setTextColor(255, 59, 59);
+                        doc.text("Attendify", 14, 20);
+                        doc.setFontSize(14);
+                        doc.setTextColor(50, 50, 50);
+                        doc.text("Student Attendance Report", 14, 30);
+                        doc.setFontSize(10);
+                        doc.text(`Name: ${this.profile.name || "N/A"}`, 14, 40);
+                        doc.text(
+                            `College: ${this.profile.college || "N/A"}`,
+                            14,
+                            45,
+                        );
+                        doc.text(
+                            `Date: ${new Date().toLocaleDateString()}`,
+                            14,
+                            50,
+                        );
+                        const head = [
+                            [
+                                "Subject",
+                                "Faculty",
+                                "Attended",
+                                "Total",
+                                "Current %",
+                                "Req %",
+                            ],
+                        ];
+                        const body = this.subjects.map((s) => [
+                            s.subject_name.substring(0, 25),
+                            (s.faculty_name || "-").substring(0, 20),
+                            s.attended_classes.toString(),
+                            s.total_classes.toString(),
+                            s.current_percentage + "%",
+                            s.min_requirement_percentage + "%",
+                        ]);
+                        doc.autoTable({
+                            startY: 60,
+                            head: head,
+                            body: body,
+                            theme: "striped",
+                            headStyles: { fillColor: [255, 59, 59] },
+                            styles: { fontSize: 8 },
+                        });
+                        doc.save(
+                            `attendify_report_${new Date().toISOString().split("T")[0]}.pdf`,
+                        );
+                        window.showToast("PDF Generated", "success");
+                    },
+
+                    async exportData() {
+                        try {
+                            const response = await fetch("/api/export");
+                            if (!response.ok) throw new Error("Export failed");
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.style.display = "none";
+                            a.href = url;
+                            const contentDisposition = response.headers.get(
+                                "Content-Disposition",
+                            );
+                            let fileName = "attendify_backup.json";
+                            if (contentDisposition) {
+                                const fileNameMatch =
+                                    contentDisposition.match(
+                                        /filename="?([^"]+)"?/,
+                                    );
+                                if (fileNameMatch && fileNameMatch.length === 2)
+                                    fileName = fileNameMatch[1];
+                            }
+                            a.download = fileName;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            window.showToast(
+                                "Backup exported successfully",
+                                "success",
+                            );
+                        } catch (err) {
+                            console.error(err);
+                            window.showToast(
+                                "Failed to export backup",
+                                "error",
+                            );
+                        }
+                    },
+
+                    async importData(event) {
+                        const file = event.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = async (e) => {
+                            try {
+                                const json = JSON.parse(e.target.result);
+                                if (
+                                    !confirm(
+                                        "Are you sure you want to restore this data? This will overwrite your current configuration and history.",
+                                    )
+                                ) {
+                                    event.target.value = "";
+                                    return;
+                                }
+                                const response = await fetch("/api/import", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify(json),
+                                });
+                                if (response.ok) {
+                                    window.showToast(
+                                        "Data restored successfully. Reloading...",
+                                        "success",
+                                    );
+                                    setTimeout(
+                                        () => window.location.reload(),
+                                        1500,
+                                    );
+                                } else {
+                                    const err = await response.json();
+                                    window.showToast(
+                                        err.error || "Failed to restore data",
+                                        "error",
+                                    );
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                window.showToast(
+                                    "Invalid JSON file uploaded",
+                                    "error",
+                                );
+                            }
+                            event.target.value = "";
+                        };
+                        reader.readAsText(file);
+                    },
+                }));
+            });
+        </script>
+        <!-- Toast container -->
+        <div
+            id="toast-container"
+            class="fixed top-20 right-4 z-[9999] flex flex-col gap-2 pointer-events-none w-72 max-w-[calc(100vw-2rem)]"
+        ></div>
+        <script src="/js/geo.js"></script>
+    </body>
 </html>

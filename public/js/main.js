@@ -61,25 +61,29 @@ document.addEventListener('alpine:init', () => {
 });
 
 window.calculateWhatIf = function (subject) {
-    const total = subject.total_classes;
-    const attended = subject.attended_classes;
-    const req = subject.min_requirement_percentage;
+    const total = Math.max(0, Number(subject.total_classes) || 0);
+    const attended = Math.max(0, Number(subject.attended_classes) || 0);
+
+    const parsedRequirement = Number.parseFloat(subject.min_requirement_percentage);
+    const req = Number.isFinite(parsedRequirement)
+        ? Math.min(100, Math.max(0, parsedRequirement))
+        : 75;
 
     if (total === 0) return { text: 'No classes', color: 'text-neutral-500 bg-white/5 border-border-color' };
 
-    let currentPct = (attended / total) * 100;
+    const currentPct = (attended / total) * 100;
 
     if (currentPct >= req) {
-        if (req === 0) return { text: 'Safe', color: 'text-green-500 bg-green-500/10 border-green-500/20' };
-        let canMiss = Math.floor((attended * 100 / req) - total);
+        if (req <= 0) return { text: 'Safe', color: 'text-green-500 bg-green-500/10 border-green-500/20' };
+        const canMiss = Math.max(0, Math.floor((attended * 100 / req) - total));
         if (canMiss > 0) {
             return { text: `Safe to miss ${canMiss}`, color: 'text-green-500 bg-green-500/10 border-green-500/20' };
         } else {
             return { text: `On track`, color: 'text-orange-500 bg-orange-500/10 border-orange-500/20' };
         }
     } else {
-        if (req === 100) return { text: 'Cannot reach 100%', color: 'text-primary bg-primary/10 border-primary/20' };
-        let needToAttend = Math.ceil((req * total - 100 * attended) / (100 - req));
+        if (req >= 100) return { text: 'Cannot reach 100%', color: 'text-primary bg-primary/10 border-primary/20' };
+        const needToAttend = Math.max(0, Math.ceil((req * total - 100 * attended) / (100 - req)));
         return { text: `Need ${needToAttend} more`, color: 'text-primary bg-primary/10 border-primary/20' };
     }
 };

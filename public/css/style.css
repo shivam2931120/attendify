@@ -3,8 +3,10 @@
 @tailwind utilities;
 
 @layer base {
-    body { 
-        @apply bg-[#050505] text-white font-display; 
+    html, body {
+        overflow-x: hidden;
+        max-width: 100vw;
+        @apply bg-[#050505] text-white font-display;
     }
 }
 
@@ -26,9 +28,15 @@
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 8px #ff3b3b; }
-  50% { box-shadow: 0 0 16px border-[#ff3b3b]; }
-  100% { box-shadow: 0 0 8px #ff3b3b; }
+    0% {
+        box-shadow: 0 0 8px #ff3b3b;
+    }
+    50% {
+        box-shadow: 0 0 16px #ff3b3b;
+    }
+    100% {
+        box-shadow: 0 0 8px #ff3b3b;
+    }
 }
 
 .modal-open {
@@ -41,16 +49,16 @@
 
 /* Custom Scrollbar for better dark mode feel */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+    width: 8px;
+    height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0d0d0d; 
+    background: #0d0d0d;
 }
 ::-webkit-scrollbar-thumb {
-  background: #333; 
-  border-radius: 4px;
+    background: #333;
+    border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ff3b3b; 
+    background: #ff3b3b;
 }

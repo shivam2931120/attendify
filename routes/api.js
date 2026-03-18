@@ -14,8 +14,14 @@ function requireAuth(req, res, next) {
 // GET all subjects with analysis
 router.get('/subjects', requireAuth, async (req, res) => {
     try {
-        const subjects = await DataService.getSubjects(req.auth.userId);
-        const analyzed = subjects.map(s => CalculatorService.analyzeSubject(s));
+        const [subjects, profile] = await Promise.all([
+            DataService.getSubjects(req.auth.userId),
+            DataService.getProfile(req.auth.userId)
+        ]);
+        const requirement = Number.isFinite(Number.parseFloat(profile && profile.attendance_requirement_percentage))
+            ? Number.parseFloat(profile.attendance_requirement_percentage)
+            : 75.0;
+        const analyzed = subjects.map(s => CalculatorService.analyzeSubject(s, requirement));
         res.json(analyzed);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -36,12 +42,21 @@ router.get('/profile', requireAuth, async (req, res) => {
 router.put('/profile', requireAuth, async (req, res) => {
     try {
         const { name, college, semester, attendance_requirement_percentage } = req.body;
-        await DataService.updateProfile(req.auth.userId, {
-            name,
-            college,
-            semester,
-            attendance_requirement_percentage: parseFloat(attendance_requirement_percentage)
-        });
+
+        const profileUpdates = {};
+        if (name !== undefined) profileUpdates.name = name;
+        if (college !== undefined) profileUpdates.college = college;
+        if (semester !== undefined) profileUpdates.semester = semester;
+
+        if (attendance_requirement_percentage !== undefined) {
+            const parsedRequirement = Number.parseFloat(attendance_requirement_percentage);
+            if (!Number.isFinite(parsedRequirement)) {
+                return res.status(400).json({ error: 'Invalid attendance requirement percentage' });
+            }
+            profileUpdates.attendance_requirement_percentage = parsedRequirement;
+        }
+
+        await DataService.updateProfile(req.auth.userId, profileUpdates);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -51,9 +66,15 @@ router.put('/profile', requireAuth, async (req, res) => {
 // GET single subject with stats and history
 router.get('/subjects/:id', requireAuth, async (req, res) => {
     try {
-        const subject = await DataService.getSubjectById(req.auth.userId, req.params.id);
+        const [subject, profile] = await Promise.all([
+            DataService.getSubjectById(req.auth.userId, req.params.id),
+            DataService.getProfile(req.auth.userId)
+        ]);
         if (!subject) return res.status(404).json({ error: 'Subject not found' });
-        const analyzed = CalculatorService.analyzeSubject(subject);
+        const requirement = Number.isFinite(Number.parseFloat(profile && profile.attendance_requirement_percentage))
+            ? Number.parseFloat(profile.attendance_requirement_percentage)
+            : 75.0;
+        const analyzed = CalculatorService.analyzeSubject(subject, requirement);
         res.json({ subject: analyzed, history: subject.history });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -78,9 +99,15 @@ router.put('/subjects/:id', requireAuth, async (req, res) => {
         if (subjectIndex === -1) return res.status(404).json({ error: 'Subject not found' });
 
         const updatedFields = req.body;
-        if (updatedFields.subject_name) data.subjects[subjectIndex].subject_name = updatedFields.subject_name;
+        if (updatedFields.subject_name !== undefined) data.subjects[subjectIndex].subject_name = updatedFields.subject_name;
         if (updatedFields.faculty_name !== undefined) data.subjects[subjectIndex].faculty_name = updatedFields.faculty_name;
-        if (updatedFields.min_requirement_percentage) data.subjects[subjectIndex].min_requirement_percentage = parseFloat(updatedFields.min_requirement_percentage);
+        if (updatedFields.min_requirement_percentage !== undefined) {
+            const parsedRequirement = Number.parseFloat(updatedFields.min_requirement_percentage);
+            if (!Number.isFinite(parsedRequirement)) {
+                return res.status(400).json({ error: 'Invalid required percentage' });
+            }
+            data.subjects[subjectIndex].min_requirement_percentage = Math.min(100, Math.max(0, parsedRequirement));
+        }
 
         await DataService.saveUserData(req.auth.userId, data);
         res.json({ success: true });
@@ -132,14 +159,17 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         let totalAttended = 0;
         let totalClassesAll = 0;
 
+        const requirement = Number.isFinite(Number.parseFloat(profile && profile.attendance_requirement_percentage))
+            ? Number.parseFloat(profile.attendance_requirement_percentage)
+            : 75.0;
+
         const analyzedSubjects = subjects.map(s => {
             totalAttended += s.attended_classes;
             totalClassesAll += s.total_classes;
-            return CalculatorService.analyzeSubject(s);
+            return CalculatorService.analyzeSubject(s, requirement);
         });
 
         const currentPercentage = CalculatorService.calculateAttendancePercentage(totalAttended, totalClassesAll);
-        const requirement = profile ? profile.attendance_requirement_percentage : 75.0;
 
         let overallStatus = 'safe';
         if (currentPercentage < requirement) overallStatus = 'danger';

@@ -33,12 +33,14 @@
 
         // Check if this record was already auto-marked today for a subject
         wasMarkedToday(subjectId) {
-            const key = `geo_marked_${subjectId}_${new Date().toISOString().split('T')[0]}`;
+            const today = window.getLocalDateString ? window.getLocalDateString() : new Date().toISOString().split('T')[0];
+            const key = `geo_marked_${subjectId}_${today}`;
             return localStorage.getItem(key) === '1';
         },
 
         setMarkedToday(subjectId) {
-            const key = `geo_marked_${subjectId}_${new Date().toISOString().split('T')[0]}`;
+            const today = window.getLocalDateString ? window.getLocalDateString() : new Date().toISOString().split('T')[0];
+            const key = `geo_marked_${subjectId}_${today}`;
             localStorage.setItem(key, '1');
         },
 
@@ -62,7 +64,7 @@
                 return; // Network error, skip silently
             }
 
-            if (!location || !location.lat || !location.lng) return;
+            if (!location || location.lat == null || location.lng == null) return;
             if (!timetable || timetable.length === 0) return;
 
             const today = this.today();
@@ -84,7 +86,7 @@
                         if (dist <= location.radius) {
                             // Inside college geofence — auto-mark as present
                             try {
-                                const today = new Date().toISOString().split('T')[0];
+                                const today = window.getLocalDateString ? window.getLocalDateString() : new Date().toISOString().split('T')[0];
                                 const res = await fetch('/api/attendance/mark', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },

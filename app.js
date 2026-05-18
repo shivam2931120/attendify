@@ -8,15 +8,30 @@ const apiRoutes = require("./routes/api");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const CLERK_PUBLISHABLE_KEY =
+  process.env.CLERK_PUBLISHABLE_KEY ||
+  "pk_test_YnJpZ2h0LW1vcmF5LTIuY2xlcmsuYWNjb3VudHMuZGV2JA";
+const hasClerkServerConfig = Boolean(process.env.CLERK_SECRET_KEY);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Clerk middleware applied globally so ALL routes can process __clerk_handshake tokens
-// (needed for Brave and other browsers that block third-party cookies)
-app.use(clerkMiddleware());
+// Clerk middleware is needed globally so all routes can process __clerk_handshake
+// tokens. If server-side Clerk keys are absent, keep public pages available and
+// let API auth fail with 401 instead of crashing every request.
+if (hasClerkServerConfig) {
+  app.use(clerkMiddleware({ publishableKey: CLERK_PUBLISHABLE_KEY }));
+} else {
+  console.warn(
+    "Attendify warning: CLERK_SECRET_KEY is not set. Public pages will load, but API routes require Clerk server configuration."
+  );
+  app.use((req, _res, next) => {
+    req.auth = () => ({ userId: null });
+    next();
+  });
+}
 
 // API Routes
 app.use("/api", apiRoutes);
@@ -169,7 +184,7 @@ app.get("/sign-in", (req, res) => {
                     }
                 </script>
                 <script crossorigin="anonymous"
-                    data-clerk-publishable-key="${process.env.CLERK_PUBLISHABLE_KEY}"
+                    data-clerk-publishable-key="${CLERK_PUBLISHABLE_KEY}"
                     src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
                     onload="initClerk()"
                     type="text/javascript"></script>
@@ -261,7 +276,7 @@ app.get("/sign-up", (req, res) => {
                     }
                 </script>
                 <script crossorigin="anonymous"
-                    data-clerk-publishable-key="${process.env.CLERK_PUBLISHABLE_KEY}"
+                    data-clerk-publishable-key="${CLERK_PUBLISHABLE_KEY}"
                     src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
                     onload="initClerk()"
                     type="text/javascript"></script>
@@ -305,7 +320,7 @@ app.get("/sso-callback", (req, res) => {
                     }
                 </script>
                 <script crossorigin="anonymous"
-                    data-clerk-publishable-key="${process.env.CLERK_PUBLISHABLE_KEY}"
+                    data-clerk-publishable-key="${CLERK_PUBLISHABLE_KEY}"
                     src="https://bright-moray-2.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
                     onload="processSSO()"
                     type="text/javascript"></script>

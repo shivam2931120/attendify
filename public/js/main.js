@@ -1,5 +1,15 @@
 // Common Javascript utility file for Attendify
 
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[char]);
+}
+
 // Global Toast Notification System
 window.showToast = function (message, type = 'success', actionCallback = null, actionLabel = 'Undo') {
     const container = document.getElementById('toast-container');
@@ -8,21 +18,23 @@ window.showToast = function (message, type = 'success', actionCallback = null, a
     const toast = document.createElement('div');
     toast.className = `px-4 py-3 rounded border text-xs font-black uppercase tracking-widest shadow-lg transform transition-all duration-300 ease-out -translate-y-full opacity-0 flex items-center justify-between gap-4 pointer-events-auto`;
 
+    const safeMessage = escapeHtml(message);
+    const safeActionLabel = escapeHtml(actionLabel);
     let htmlContent = `<div class="flex items-center gap-2">`;
     if (type === 'success') {
         toast.classList.add('bg-green-500/10', 'border-green-500/30', 'text-green-500');
-        htmlContent += `<span class="material-symbols-outlined text-[16px]">check_circle</span> <span>${message}</span>`;
+        htmlContent += `<span class="material-symbols-outlined text-[16px]">check_circle</span> <span>${safeMessage}</span>`;
     } else if (type === 'error') {
         toast.classList.add('bg-primary/10', 'border-primary/30', 'text-primary');
-        htmlContent += `<span class="material-symbols-outlined text-[16px]">error</span> <span>${message}</span>`;
+        htmlContent += `<span class="material-symbols-outlined text-[16px]">error</span> <span>${safeMessage}</span>`;
     } else {
         toast.classList.add('bg-white/10', 'border-white/30', 'text-white');
-        htmlContent += `<span class="material-symbols-outlined text-[16px]">info</span> <span>${message}</span>`;
+        htmlContent += `<span class="material-symbols-outlined text-[16px]">info</span> <span>${safeMessage}</span>`;
     }
     htmlContent += `</div>`;
 
     if (actionCallback) {
-        htmlContent += `<button class="action-btn px-3 py-1 bg-white/10 hover:bg-white/20 rounded border border-white/20 transition-colors text-[10px] whitespace-nowrap">${actionLabel}</button>`;
+        htmlContent += `<button class="action-btn px-3 py-1 bg-white/10 hover:bg-white/20 rounded border border-white/20 transition-colors text-[10px] whitespace-nowrap">${safeActionLabel}</button>`;
     }
 
     toast.innerHTML = htmlContent;
@@ -52,6 +64,30 @@ window.showToast = function (message, type = 'success', actionCallback = null, a
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+window.waitForClerk = async function (timeoutMs = 10000) {
+    const start = Date.now();
+
+    while (typeof window.Clerk === 'undefined') {
+        if (Date.now() - start >= timeoutMs) {
+            if (window.showToast) {
+                window.showToast('Authentication failed to load', 'error');
+            }
+            return null;
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    await window.Clerk.load();
+    return window.Clerk;
+};
+
+window.getLocalDateString = function (date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 document.addEventListener('alpine:init', () => {
     // Make showToast accessible inside Alpine components easily if needed

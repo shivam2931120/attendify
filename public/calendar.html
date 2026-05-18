@@ -323,11 +323,14 @@
 
                 async initData() {
                     window.addEventListener('load', async () => {
-                        await Clerk.load();
+                        const clerk = await window.waitForClerk();
+                        if (!clerk) {
+                            this.loading = false;
+                            return;
+                        }
                         const userButtonDiv = document.getElementById('user-button');
-                        if (typeof Clerk === "undefined") { setTimeout(() => this.initData(), 100); return; }
-                        if (Clerk.user) {
-                            Clerk.mountUserButton(userButtonDiv);
+                        if (clerk.user) {
+                            clerk.mountUserButton(userButtonDiv);
                             document.getElementById('main-content').style.opacity = '1';
                             const bar = document.getElementById('nprogress-bar');
                             bar.style.opacity = '1'; bar.style.width = '70%';
@@ -442,7 +445,7 @@
                     // Holiday takes highest priority
                     if (this.isHoliday(day)) return "bg-yellow-500/10 border-yellow-500/30 text-yellow-400";
 
-                    const todayStr = new Date().toISOString().split('T')[0];
+                    const todayStr = window.getLocalDateString();
                     const thisDayStr = this.getFullDateStringForDay(day);
                     const dow = new Date(this.currentYear, this.currentMonth, day).getDay();
                     const isWeekend = dow === 0 || dow === 6;

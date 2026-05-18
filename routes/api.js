@@ -3,11 +3,49 @@ const DataService = require('../services/dataService');
 const CalculatorService = require('../services/calculatorService');
 
 const router = express.Router();
+const VALID_ATTENDANCE_STATUSES = new Set(['present', 'absent', 'extra']);
+const VALID_TIMETABLE_DAYS = new Set(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']);
+
+function isValidTime(value) {
+    return typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+function isValidDateString(value) {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(value);
+}
+
+function getRequestUserId(req) {
+    if (typeof req.auth === 'function') {
+        const auth = req.auth();
+        return auth && auth.userId;
+    }
+    return req.auth && req.auth.userId;
+}
+
+function validateTimetablePayload({ subjectId, day, startTime, endTime }) {
+    if (!subjectId || !day || !startTime || !endTime) {
+        return 'subjectId, day, startTime, endTime are required';
+    }
+    if (!VALID_TIMETABLE_DAYS.has(String(day).toLowerCase())) {
+        return 'Invalid timetable day';
+    }
+    if (!isValidTime(startTime) || !isValidTime(endTime)) {
+        return 'Times must use HH:MM format';
+    }
+    if (startTime >= endTime) {
+        return 'endTime must be after startTime';
+    }
+    return null;
+}
 
 function requireAuth(req, res, next) {
-    if (!req.auth || !req.auth.userId) {
+    const userId = getRequestUserId(req);
+    if (!userId) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
+    req.userId = userId;
     next();
 }
 
@@ -15,8 +53,8 @@ function requireAuth(req, res, next) {
 router.get('/subjects', requireAuth, async (req, res) => {
     try {
         const [subjects, profile] = await Promise.all([
-            DataService.getSubjects(req.auth.userId),
-            DataService.getProfile(req.auth.userId)
+            DataService.getSubjects(req.userId),
+            DataService.getProfile(req.userId)
         ]);
         const requirement = Number.isFinite(Number.parseFloat(profile && profile.attendance_requirement_percentage))
             ? Number.parseFloat(profile.attendance_requirement_percentage)
@@ -31,7 +69,7 @@ router.get('/subjects', requireAuth, async (req, res) => {
 // GET user profile
 router.get('/profile', requireAuth, async (req, res) => {
     try {
-        const profile = await DataService.getProfile(req.auth.userId);
+        const profile = await DataService.getProfile(req.userId);
         res.json(profile);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -56,7 +94,7 @@ router.put('/profile', requireAuth, async (req, res) => {
             profileUpdates.attendance_requirement_percentage = parsedRequirement;
         }
 
-        await DataService.updateProfile(req.auth.userId, profileUpdates);
+        await DataService.updateProfile(req.userId, profileUpdates);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -67,8 +105,8 @@ router.put('/profile', requireAuth, async (req, res) => {
 router.get('/subjects/:id', requireAuth, async (req, res) => {
     try {
         const [subject, profile] = await Promise.all([
-            DataService.getSubjectById(req.auth.userId, req.params.id),
-            DataService.getProfile(req.auth.userId)
+            DataService.getSubjectById(req.userId, req.params.id),
+            DataService.getProfile(req.userId)
         ]);
         if (!subject) return res.status(404).json({ error: 'Subject not found' });
         const requirement = Number.isFinite(Number.parseFloat(profile && profile.attendance_requirement_percentage))
@@ -84,7 +122,21 @@ router.get('/subjects/:id', requireAuth, async (req, res) => {
 // POST new subject
 router.post('/subjects', requireAuth, async (req, res) => {
     try {
-        const newSubject = await DataService.createSubject(req.auth.userId, req.body);
+        const subjectName = typeof req.body.subject_name === 'string' ? req.body.subject_name.trim() : '';
+        if (!subjectName) {
+            return res.status(400).json({ error: 'Subject name is required' });
+        }
+        if (req.body.min_requirement_percentage !== undefined) {
+            const parsedRequirement = Number.parseFloat(req.body.min_requirement_percentage);
+            if (!Number.isFinite(parsedRequirement)) {
+                return res.status(400).json({ error: 'Invalid required percentage' });
+            }
+        }
+        const newSubject = await DataService.createSubject(req.userId, {
+            ...req.body,
+            subject_name: subjectName,
+            faculty_name: typeof req.body.faculty_name === 'string' ? req.body.faculty_name.trim() : ''
+        });
         res.status(201).json({ id: newSubject.id });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -94,7 +146,7 @@ router.post('/subjects', requireAuth, async (req, res) => {
 // PUT update subject
 router.put('/subjects/:id', requireAuth, async (req, res) => {
     try {
-        const data = await DataService.getUserData(req.auth.userId);
+        const data = await DataService.getUserData(req.userId);
         const subjectIndex = data.subjects.findIndex(s => s.id === req.params.id);
         if (subjectIndex === -1) return res.status(404).json({ error: 'Subject not found' });
 
@@ -109,7 +161,7 @@ router.put('/subjects/:id', requireAuth, async (req, res) => {
             data.subjects[subjectIndex].min_requirement_percentage = Math.min(100, Math.max(0, parsedRequirement));
         }
 
-        await DataService.saveUserData(req.auth.userId, data);
+        await DataService.saveUserData(req.userId, data);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -119,7 +171,7 @@ router.put('/subjects/:id', requireAuth, async (req, res) => {
 // DELETE subject
 router.delete('/subjects/:id', requireAuth, async (req, res) => {
     try {
-        await DataService.deleteSubject(req.auth.userId, req.params.id);
+        await DataService.deleteSubject(req.userId, req.params.id);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -130,9 +182,21 @@ router.delete('/subjects/:id', requireAuth, async (req, res) => {
 router.post('/attendance/mark', requireAuth, async (req, res) => {
     try {
         const { subjectId, status, date } = req.body;
-        await DataService.markAttendance(req.auth.userId, subjectId, status, date);
+        if (!subjectId) {
+            return res.status(400).json({ error: 'subjectId is required' });
+        }
+        if (!VALID_ATTENDANCE_STATUSES.has(status)) {
+            return res.status(400).json({ error: 'Invalid attendance status' });
+        }
+        if (!isValidDateString(date)) {
+            return res.status(400).json({ error: 'Invalid attendance date' });
+        }
+        await DataService.markAttendance(req.userId, subjectId, status, date);
         res.json({ success: true });
     } catch (err) {
+        if (err.message === 'Subject not found') {
+            return res.status(404).json({ error: err.message });
+        }
         res.status(500).json({ error: err.message });
     }
 });
@@ -140,7 +204,7 @@ router.post('/attendance/mark', requireAuth, async (req, res) => {
 // DELETE attendance record
 router.delete('/attendance/:subjectId/:recordId', requireAuth, async (req, res) => {
     try {
-        const success = await DataService.deleteAttendanceRecord(req.auth.userId, req.params.subjectId, req.params.recordId);
+        const success = await DataService.deleteAttendanceRecord(req.userId, req.params.subjectId, req.params.recordId);
         if (!success) return res.status(404).json({ error: 'Record or subject not found' });
         res.json({ success: true });
     } catch (err) {
@@ -152,8 +216,8 @@ router.delete('/attendance/:subjectId/:recordId', requireAuth, async (req, res) 
 router.get('/dashboard', requireAuth, async (req, res) => {
     try {
         const [subjects, profile] = await Promise.all([
-            DataService.getSubjects(req.auth.userId),
-            DataService.getProfile(req.auth.userId)
+            DataService.getSubjects(req.userId),
+            DataService.getProfile(req.userId)
         ]);
 
         let totalAttended = 0;
@@ -191,7 +255,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
 // GET /api/analytics/trend
 router.get('/analytics/trend', requireAuth, async (req, res) => {
     try {
-        const subjects = await DataService.getSubjects(req.auth.userId);
+        const subjects = await DataService.getSubjects(req.userId);
         const limitDate = new Date();
         limitDate.setDate(limitDate.getDate() - 30);
         let dailyStats = {};
@@ -230,8 +294,8 @@ router.get('/analytics/trend', requireAuth, async (req, res) => {
 // GET /api/export
 router.get('/export', requireAuth, async (req, res) => {
     try {
-        const userData = await DataService.getUserData(req.auth.userId);
-        res.setHeader('Content-disposition', `attachment; filename=attendify_backup_${req.auth.userId}.json`);
+        const userData = await DataService.getUserData(req.userId);
+        res.setHeader('Content-disposition', `attachment; filename=attendify_backup_${req.userId}.json`);
         res.setHeader('Content-type', 'application/json');
         res.send(JSON.stringify(userData, null, 2));
     } catch (err) {
@@ -243,10 +307,10 @@ router.get('/export', requireAuth, async (req, res) => {
 router.post('/import', requireAuth, async (req, res) => {
     try {
         const incomingData = req.body;
-        if (!incomingData || !incomingData.profile || !incomingData.subjects) {
+        if (!incomingData || !incomingData.profile || !Array.isArray(incomingData.subjects)) {
             return res.status(400).json({ error: 'Invalid file format. Ensure it is a valid Attendify export.' });
         }
-        await DataService.saveUserData(req.auth.userId, incomingData);
+        await DataService.saveUserData(req.userId, incomingData);
         res.json({ success: true, message: 'Data imported successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -259,8 +323,8 @@ router.post('/import', requireAuth, async (req, res) => {
 router.get('/timetable', requireAuth, async (req, res) => {
     try {
         const [timetable, subjects] = await Promise.all([
-            DataService.getTimetable(req.auth.userId),
-            DataService.getSubjects(req.auth.userId)
+            DataService.getTimetable(req.userId),
+            DataService.getSubjects(req.userId)
         ]);
         const subjectMap = {};
         subjects.forEach(s => { subjectMap[s.id] = s.subject_name; });
@@ -278,11 +342,46 @@ router.get('/timetable', requireAuth, async (req, res) => {
 router.post('/timetable', requireAuth, async (req, res) => {
     try {
         const { subjectId, day, startTime, endTime } = req.body;
-        if (!subjectId || !day || !startTime || !endTime) {
-            return res.status(400).json({ error: 'subjectId, day, startTime, endTime are required' });
+        const validationError = validateTimetablePayload({ subjectId, day, startTime, endTime });
+        if (validationError) {
+            return res.status(400).json({ error: validationError });
         }
-        const slot = await DataService.addTimetableSlot(req.auth.userId, { subjectId, day, startTime, endTime });
+        const subject = await DataService.getSubjectById(req.userId, subjectId);
+        if (!subject) {
+            return res.status(404).json({ error: 'Subject not found' });
+        }
+        const slot = await DataService.addTimetableSlot(req.userId, {
+            subjectId,
+            day: String(day).toLowerCase(),
+            startTime,
+            endTime
+        });
         res.status(201).json(slot);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT update timetable slot
+router.put('/timetable/:id', requireAuth, async (req, res) => {
+    try {
+        const { subjectId, day, startTime, endTime } = req.body;
+        const validationError = validateTimetablePayload({ subjectId, day, startTime, endTime });
+        if (validationError) {
+            return res.status(400).json({ error: validationError });
+        }
+        const subject = await DataService.getSubjectById(req.userId, subjectId);
+        if (!subject) {
+            return res.status(404).json({ error: 'Subject not found' });
+        }
+        const slot = await DataService.updateTimetableSlot(req.userId, req.params.id, {
+            subjectId,
+            day: String(day).toLowerCase(),
+            startTime,
+            endTime
+        });
+        if (!slot) return res.status(404).json({ error: 'Timetable slot not found' });
+        res.json(slot);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -291,7 +390,7 @@ router.post('/timetable', requireAuth, async (req, res) => {
 // DELETE timetable slot
 router.delete('/timetable/:id', requireAuth, async (req, res) => {
     try {
-        await DataService.deleteTimetableSlot(req.auth.userId, req.params.id);
+        await DataService.deleteTimetableSlot(req.userId, req.params.id);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -303,7 +402,7 @@ router.delete('/timetable/:id', requireAuth, async (req, res) => {
 // GET college location
 router.get('/settings/location', requireAuth, async (req, res) => {
     try {
-        const loc = await DataService.getCollegeLocation(req.auth.userId);
+        const loc = await DataService.getCollegeLocation(req.userId);
         res.json(loc || { lat: null, lng: null, radius: 150 });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -314,10 +413,23 @@ router.get('/settings/location', requireAuth, async (req, res) => {
 router.put('/settings/location', requireAuth, async (req, res) => {
     try {
         const { lat, lng, radius } = req.body;
-        if (lat == null || lng == null) {
-            return res.status(400).json({ error: 'lat and lng are required' });
+        const parsedLat = Number.parseFloat(lat);
+        const parsedLng = Number.parseFloat(lng);
+        const parsedRadius = Number.parseInt(radius, 10);
+        if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLng)) {
+            return res.status(400).json({ error: 'Valid lat and lng are required' });
         }
-        const saved = await DataService.saveCollegeLocation(req.auth.userId, { lat, lng, radius: radius || 150 });
+        if (parsedLat < -90 || parsedLat > 90 || parsedLng < -180 || parsedLng > 180) {
+            return res.status(400).json({ error: 'lat or lng is out of range' });
+        }
+        if (radius !== undefined && (!Number.isFinite(parsedRadius) || parsedRadius <= 0)) {
+            return res.status(400).json({ error: 'radius must be a positive number' });
+        }
+        const saved = await DataService.saveCollegeLocation(req.userId, {
+            lat: parsedLat,
+            lng: parsedLng,
+            radius: parsedRadius || 150
+        });
         res.json(saved);
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -855,15 +855,15 @@
 
                     async initData() {
                         window.addEventListener("load", async () => {
-                            await Clerk.load();
-                            const userButtonDiv =
-                                document.getElementById("user-button");
-                            if (typeof Clerk === "undefined") {
-                                setTimeout(() => this.initData(), 100);
+                            const clerk = await window.waitForClerk();
+                            if (!clerk) {
+                                this.loading = false;
                                 return;
                             }
-                            if (Clerk.user) {
-                                Clerk.mountUserButton(userButtonDiv);
+                            const userButtonDiv =
+                                document.getElementById("user-button");
+                            if (clerk.user) {
+                                clerk.mountUserButton(userButtonDiv);
                                 document.getElementById(
                                     "main-content",
                                 ).style.opacity = "1";
@@ -1024,7 +1024,7 @@
                             return;
                         }
 
-                        const today = new Date().toISOString().split("T")[0];
+                        const today = window.getLocalDateString();
                         showToast(
                             `Bunking ${slotsToday.length} slot(s)...`,
                             "info",
@@ -1088,7 +1088,7 @@
                         const subjectIds = [
                             ...new Set(todaySlots.map((s) => s.subjectId)),
                         ];
-                        const today = new Date().toISOString().split("T")[0];
+                        const today = window.getLocalDateString();
 
                         showToast(
                             `Bunking ${subjectIds.length} subjects...`,
@@ -1222,7 +1222,7 @@
                         else if (status !== "absent" && navigator.vibrate)
                             navigator.vibrate(10);
 
-                        const today = new Date().toISOString().split("T")[0];
+                        const today = window.getLocalDateString();
                         try {
                             const res = await fetch("/api/attendance/mark", {
                                 method: "POST",

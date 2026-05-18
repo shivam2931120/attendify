@@ -237,6 +237,25 @@ class DataService {
         return newSlot;
     }
 
+    static async updateTimetableSlot(userId, slotId, slot) {
+        const data = await this.getUserData(userId);
+        data.timetable = data.timetable || [];
+        const slotIndex = data.timetable.findIndex(t => t.id === slotId.toString());
+        if (slotIndex === -1) return null;
+
+        const updatedSlot = {
+            ...data.timetable[slotIndex],
+            subjectId: slot.subjectId.toString(),
+            day: slot.day,
+            startTime: slot.startTime,
+            endTime: slot.endTime
+        };
+
+        data.timetable[slotIndex] = updatedSlot;
+        await this.saveUserData(userId, data);
+        return updatedSlot;
+    }
+
     static async deleteTimetableSlot(userId, slotId) {
         const data = await this.getUserData(userId);
         data.timetable = (data.timetable || []).filter(t => t.id !== slotId.toString());
